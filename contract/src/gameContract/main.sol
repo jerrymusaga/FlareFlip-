@@ -12,7 +12,7 @@ import "./events/Events.sol";
 
 /**
  * @title FlareFlip
- * @dev A "Heads or Tails" game contract built on Flare Network
+ * @dev A "Heads or Tails" game contract built on Flare Network with staking mechanism
  */
 contract FlareFlip is Ownable {
     enum PlayerChoice {
@@ -55,6 +55,7 @@ contract FlareFlip is Ownable {
         uint currentParticipants;
         uint prizePool;
         PoolStatus status;
+        address creator;     // Address of the staker who created this pool
         mapping(address => Player) players;
         uint currentRound;
         address[] playersInPool;
@@ -79,7 +80,27 @@ contract FlareFlip is Ownable {
         uint prizePool;
         PoolStatus status;
         MarketData marketData;
+        address creator;
     }
+
+    struct StakerInfo {
+        uint256 stakedAmount;
+        uint256 activePoolsCount;
+        uint256 totalRewards;
+        uint256 lastStakeTimestamp;
+    }
+
+    // Staking related variables
+    uint256 public constant MINIMUM_STAKE = 100 ether; // 100 FLR tokens
+    uint256 public constant MAX_POOLS_PER_STAKER = 3;
+    uint256 public creatorFeePercentage = 500; // 5% (in basis points)
+    uint256 public minimumStakingPeriod = 7 days;
+    mapping(address => StakerInfo) public stakers;
+
+    // Asset to feed ID mapping
+    mapping(string => bytes21) public assetToFeedId;
+    string[] public supportedAssets;
+    mapping(string => bool) public isAssetSupported;
 
     // State variables
     uint public poolCount;
@@ -95,7 +116,7 @@ contract FlareFlip is Ownable {
     RandomNumberV2Interface public randomNumberV2;
 
     // Events 
-    event PoolCreated(uint poolId, uint entryFee, uint maxParticipants, string assetSymbol);
+    event PoolCreated(uint poolId, uint entryFee, uint maxParticipants, string assetSymbol, address creator);
     event PlayerJoined(uint poolId, address player);
     event PoolActivated(uint poolId);
     event RoundCompleted(uint poolId, uint round, PlayerChoice winningChoice);
@@ -104,9 +125,20 @@ contract FlareFlip is Ownable {
     event PoolCompleted(uint poolId, uint prizePool);
     event TieBrokenByHybrid(uint poolId, uint round, uint256 startPrice, uint256 lastPrice, uint256 randomValue, PlayerChoice winningSelection);
     event PrizeClaimed(uint poolId, address winner, uint amount);
+    event CreatorRewardPaid(uint poolId, address creator, uint amount);
+    event Staked(address staker, uint256 amount);
+    event Unstaked(address staker, uint256 amount);
+    event AssetAdded(string symbol, bytes21 feedId);
+    event AssetRemoved(string symbol);
+    event CreatorFeePercentageUpdated(uint256 newPercentage);
 
     modifier poolExists(uint _poolId) {
         require(_poolId < poolCount, "Pool does not exist");
+        _;
+    }
+
+    modifier onlyStaker() {
+        require(stakers[msg.sender].stakedAmount >= MINIMUM_STAKE, "Not a staker or insufficient stake");
         _;
     }
 
@@ -118,36 +150,132 @@ contract FlareFlip is Ownable {
     }
 
     /**
-     * @dev Create a new pool with specified parameters
+     * @dev Stake FLR tokens to become eligible for pool creation
+     */
+    function stake() external payable {
+        require(msg.value >= MINIMUM_STAKE, "Stake amount below minimum");
+        
+        StakerInfo storage stakerInfo = stakers[msg.sender];
+        stakerInfo.stakedAmount += msg.value;
+        stakerInfo.lastStakeTimestamp = block.timestamp;
+        
+        emit Staked(msg.sender, msg.value);
+    }
+
+    /**
+     * @dev Unstake FLR tokens if the minimum staking period has passed
+     * @param _amount Amount to unstake
+     */
+    function unstake(uint256 _amount) external {
+        StakerInfo storage stakerInfo = stakers[msg.sender];
+        require(stakerInfo.stakedAmount >= _amount, "Insufficient staked amount");
+        require(block.timestamp >= stakerInfo.lastStakeTimestamp + minimumStakingPeriod, "Minimum staking period not met");
+        require(stakerInfo.activePoolsCount == 0, "Cannot unstake with active pools");
+        
+        stakerInfo.stakedAmount -= _amount;
+        
+        (bool success, ) = payable(msg.sender).call{value: _amount}("");
+        require(success, "Transfer failed");
+        
+        emit Unstaked(msg.sender, _amount);
+    }
+
+    /**
+     * @dev Add a supported asset (admin only)
+     * @param _symbol Asset symbol (e.g., "BTC")
+     * @param _feedId Flare FTSO feed ID
+     */
+    function addSupportedAsset(string memory _symbol, bytes21 _feedId) external onlyOwner {
+        require(bytes(_symbol).length > 0, "Symbol cannot be empty");
+        require(_feedId != bytes21(0), "Invalid feed ID");
+        require(!isAssetSupported[_symbol], "Asset already supported");
+        
+        assetToFeedId[_symbol] = _feedId;
+        supportedAssets.push(_symbol);
+        isAssetSupported[_symbol] = true;
+        
+        emit AssetAdded(_symbol, _feedId);
+    }
+
+    /**
+     * @dev Remove a supported asset (admin only)
+     * @param _symbol Asset symbol to remove
+     */
+    function removeSupportedAsset(string memory _symbol) external onlyOwner {
+        require(isAssetSupported[_symbol], "Asset not supported");
+        
+        isAssetSupported[_symbol] = false;
+        assetToFeedId[_symbol] = bytes21(0);
+        
+        // Remove from supportedAssets array
+        for (uint i = 0; i < supportedAssets.length; i++) {
+            if (keccak256(abi.encodePacked(supportedAssets[i])) == keccak256(abi.encodePacked(_symbol))) {
+                supportedAssets[i] = supportedAssets[supportedAssets.length - 1];
+                supportedAssets.pop();
+                break;
+            }
+        }
+        
+        emit AssetRemoved(_symbol);
+    }
+
+    /**
+     * @dev Get all supported assets
+     * @return Array of supported asset symbols
+     */
+    function getAllSupportedAssets() external view returns (string[] memory) {
+        return supportedAssets;
+    }
+
+    /**
+     * @dev Set creator fee percentage (admin only)
+     * @param _percentage New percentage (in basis points, e.g. 500 = 5%)
+     */
+    function setCreatorFeePercentage(uint256 _percentage) external onlyOwner {
+        require(_percentage <= 2000, "Fee percentage too high"); // Max 20%
+        creatorFeePercentage = _percentage;
+        emit CreatorFeePercentageUpdated(_percentage);
+    }
+
+    /**
+     * @dev Create a new pool with specified parameters (staker only)
      * @param _entryFee Entry fee for the pool in flare token
      * @param _maxParticipants Maximum number of participants
      * @param _assetSymbol Symbol of the asset to track (e.g., "BTC")
-     * @param _feedId FTSO feed ID for the asset
      */
     function createPool(
         uint _entryFee,
         uint _maxParticipants,
-        string memory _assetSymbol,
-        bytes21 _feedId
-    ) external onlyOwner {
+        string memory _assetSymbol
+    ) external onlyStaker {
         require(_entryFee > 0, "Entry fee must be > 0");
-        require(bytes(_assetSymbol).length > 0, "Asset symbol required");
-        require(_feedId != bytes21(0), "Invalid feed ID");
-
+        require(_maxParticipants > 1, "Need at least 2 participants");
+        require(isAssetSupported[_assetSymbol], "Asset not supported");
+        
+        StakerInfo storage stakerInfo = stakers[msg.sender];
+        require(stakerInfo.activePoolsCount < MAX_POOLS_PER_STAKER, "Max pools per staker reached");
+        
+        bytes21 feedId = assetToFeedId[_assetSymbol];
+        require(feedId != bytes21(0), "Invalid feed ID");
+        
         uint poolId = poolCount++;
         
         Pool storage newPool = pools[poolId];
         newPool.entryFee = _entryFee;
         newPool.maxParticipants = _maxParticipants;
         newPool.assetSymbol = _assetSymbol;
-        newPool.feedId = _feedId;
+        newPool.feedId = feedId;
         newPool.currentParticipants = 0;
         newPool.prizePool = 0;
         newPool.status = PoolStatus.OPENED;
+        newPool.creator = msg.sender;
         newPool.currentRound = 1;
         newPool.maxWinners = _maxParticipants <= 10 ? (_maxParticipants > 1 ? 2 : 1) : 3;
         newPool.currentActiveParticipants = 0;
         newPool.prizeClaimed = false;
+
+        // Increment active pools count for staker
+        stakerInfo.activePoolsCount++;
 
         // Set trading pair for the pool
         poolTradingPairs[poolId] = TradingPair({
@@ -164,7 +292,7 @@ contract FlareFlip is Ownable {
             priceDecimals: 18
         });
 
-        emit PoolCreated(poolId, _entryFee, _maxParticipants, _assetSymbol);
+        emit PoolCreated(poolId, _entryFee, _maxParticipants, _assetSymbol, msg.sender);
     }
 
     /**
@@ -177,6 +305,7 @@ contract FlareFlip is Ownable {
         require(msg.value >= pool.entryFee, "Insufficient fee");
         require(pool.currentParticipants < pool.maxParticipants, "Pool full");
         require(pool.players[msg.sender].playerAddress == address(0), "Already joined");
+        require(pool.creator != msg.sender, "Creator cannot join own pool");
 
         Player storage newPlayer = pool.players[msg.sender];
         newPlayer.playerAddress = msg.sender;
@@ -276,7 +405,7 @@ contract FlareFlip is Ownable {
     }
 
     /**
-     * @dev Resolve a tie by using market data and random number
+     * @dev Resolve a tie by using market data and random number from flare's vrf
      * @param _poolId ID of the pool
      * @param _round Current round number
      * @return The winning selection
@@ -371,6 +500,11 @@ contract FlareFlip is Ownable {
                 pool.finalWinners.push(playerAddress);
             }
         }
+
+        // Decrement active pools count for the creator
+        address creator = pool.creator;
+        StakerInfo storage stakerInfo = stakers[creator];
+        stakerInfo.activePoolsCount--;
         
         emit PoolCompleted(_poolId, pool.prizePool);
     }
@@ -501,7 +635,23 @@ contract FlareFlip is Ownable {
         
         pool.players[msg.sender].hasClaimed = true;
         
-        uint prizeAmount = pool.prizePool / pool.finalWinners.length;
+        // Calculate creator fee
+        uint256 totalPrize = pool.prizePool;
+        uint256 creatorFee = (totalPrize * creatorFeePercentage) / 10000;
+        uint256 winnersPrize = totalPrize - creatorFee;
+        uint256 prizePerWinner = winnersPrize / pool.finalWinners.length;
+        
+        // Pay creator fee
+        address creator = pool.creator;
+        if (creatorFee > 0) {
+            StakerInfo storage stakerInfo = stakers[creator];
+            stakerInfo.totalRewards += creatorFee;
+            
+            (bool creatorSuccess,) = payable(creator).call{value: creatorFee}("");
+            require(creatorSuccess, "Creator fee transfer failed");
+            
+            emit CreatorRewardPaid(_poolId, creator, creatorFee);
+        }
         
         // Check if all winners have claimed
         bool allClaimed = true;
@@ -516,10 +666,11 @@ contract FlareFlip is Ownable {
             pool.prizeClaimed = true;
         }
         
-        (bool success, ) = payable(msg.sender).call{value: prizeAmount}("");
-        require(success, "Transfer failed");
+        // Pay winner
+        (bool success, ) = payable(msg.sender).call{value: prizePerWinner}("");
+        require(success, "Prize transfer failed");
         
-        emit PrizeClaimed(_poolId, msg.sender, prizeAmount);
+        emit PrizeClaimed(_poolId, msg.sender, prizePerWinner);
     }
 
     /**
@@ -537,7 +688,8 @@ contract FlareFlip is Ownable {
             currentParticipants: pool.currentParticipants,
             prizePool: pool.prizePool,
             status: pool.status,
-            marketData: poolMarketData[_poolId]
+            marketData: poolMarketData[_poolId],
+            creator: pool.creator
         });
     }
 
@@ -548,6 +700,15 @@ contract FlareFlip is Ownable {
      */
     function getPlayerPools(address _player) external view returns (uint[] memory) {
         return userPools[_player];
+    }
+
+    /**
+     * @dev Get staker information
+     * @param _staker Address of the staker
+     * @return Staker information
+     */
+    function getStakerInfo(address _staker) external view returns (StakerInfo memory) {
+        return stakers[_staker];
     }
 
     /**
@@ -566,6 +727,14 @@ contract FlareFlip is Ownable {
     function setRandomNumberProvider(address _randomNumberV2) external onlyOwner {
         require(_randomNumberV2 != address(0), "Invalid RandomNumberV2 address");
         randomNumberV2 = RandomNumberV2Interface(_randomNumberV2);
+    }
+
+    /**
+     * @dev Set minimum staking period
+     * @param _period New minimum staking period in seconds
+     */
+    function setMinimumStakingPeriod(uint256 _period) external onlyOwner {
+        minimumStakingPeriod = _period;
     }
 
     /**
