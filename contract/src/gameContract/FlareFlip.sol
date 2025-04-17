@@ -109,11 +109,21 @@ contract FlareFlip is Ownable {
     mapping(uint => MarketData) public poolMarketData;
     mapping(uint => mapping(uint => uint256)) public roundRandomNumbers;
     mapping(address => uint[]) public userPools;
+
+    // state variables for category tracking from flare IFtsoFeedIdConverter
+    mapping(string => mapping(string => bytes21)) public categoryNameToFeedId;
+    mapping(bytes21 => uint8) public feedCategories;
+    mapping(uint8 => string[]) public categorizedAssets;
+    mapping(uint8 => string) public categoryNames;
+    mapping(uint8 => bool) public isCategoryRegistered;
+    uint8[] public supportedCategories;
     
     mapping(bytes21 => uint256) public feedFees; // Track fees per feed ID
     FtsoV2Interface public ftsoV2;
     IFeeCalculator public feeCalculator;
     RandomNumberV2Interface public randomNumberV2;
+
+
 
     // Events 
     event PoolCreated(uint poolId, uint entryFee, uint maxParticipants, string assetSymbol, address creator);
@@ -131,6 +141,10 @@ contract FlareFlip is Ownable {
     event AssetAdded(string symbol, bytes21 feedId);
     event AssetRemoved(string symbol);
     event CreatorFeePercentageUpdated(uint256 newPercentage);
+    event AssetAdded(uint8 categoryId, string categoryName, string symbol, bytes21 feedId);
+    event AssetRemoved(string symbol, uint8 categoryId);
+    event CategoryAdded(uint8 categoryId, string categoryName);
+    event MarketPriceUpdated(uint poolId, uint256 price, uint256 timestamp);
 
     modifier poolExists(uint _poolId) {
         require(_poolId < poolCount, "Pool does not exist");
@@ -182,19 +196,39 @@ contract FlareFlip is Ownable {
 
     /**
      * @dev Add a supported asset (admin only)
-     * @param _symbol Asset symbol (e.g., "BTC")
+     * @param _category Asset category (e.g., 1 for crypto, 2 for commodities, 3 for forex)
+     * @param _categoryName Human-readable category name
+     * @param _symbol Asset symbol (e.g., "FLR")
      * @param _feedId Flare FTSO feed ID
      */
-    function addSupportedAsset(string memory _symbol, bytes21 _feedId) external onlyOwner {
+    function addSupportedAsset(
+        uint8 _category,
+        string memory _categoryName,
+        string memory _symbol,
+        bytes21 _feedId
+    ) external onlyOwner {
         require(bytes(_symbol).length > 0, "Symbol cannot be empty");
+        require(bytes(_categoryName).length > 0, "Category name cannot be empty");
         require(_feedId != bytes21(0), "Invalid feed ID");
         require(!isAssetSupported[_symbol], "Asset already supported");
         
+        // Store the relationship between category, name and feed ID
+        categoryNameToFeedId[_categoryName][_symbol] = _feedId;
         assetToFeedId[_symbol] = _feedId;
+        feedCategories[_feedId] = _category;
+        
+        // Track assets by category
+        if (!isCategoryRegistered[_category]) {
+            categoryNames[_category] = _categoryName;
+            isCategoryRegistered[_category] = true;
+            supportedCategories.push(_category);
+        }
+        
+        categorizedAssets[_category].push(_symbol);
         supportedAssets.push(_symbol);
         isAssetSupported[_symbol] = true;
         
-        emit AssetAdded(_symbol, _feedId);
+        emit AssetAdded(_category, _categoryName, _symbol, _feedId);
     }
 
     /**
@@ -204,6 +238,21 @@ contract FlareFlip is Ownable {
     function removeSupportedAsset(string memory _symbol) external onlyOwner {
         require(isAssetSupported[_symbol], "Asset not supported");
         
+        bytes21 feedId = assetToFeedId[_symbol];
+        uint8 category = feedCategories[feedId];
+        
+        // Remove from category mapping
+        string[] storage assetsInCategory = categorizedAssets[category];
+        for (uint i = 0; i < assetsInCategory.length; i++) {
+            if (keccak256(abi.encodePacked(assetsInCategory[i])) == keccak256(abi.encodePacked(_symbol))) {
+                // Replace with last element and pop
+                assetsInCategory[i] = assetsInCategory[assetsInCategory.length - 1];
+                assetsInCategory.pop();
+                break;
+            }
+        }
+        
+        // Remove from main arrays and mappings
         isAssetSupported[_symbol] = false;
         assetToFeedId[_symbol] = bytes21(0);
         
@@ -216,7 +265,23 @@ contract FlareFlip is Ownable {
             }
         }
         
-        emit AssetRemoved(_symbol);
+        // Check if this was the last asset in this category
+        if (assetsInCategory.length == 0) {
+            // Remove the category if no assets remain
+            isCategoryRegistered[category] = false;
+            delete categoryNames[category];
+            
+            // Remove from supportedCategories array
+            for (uint i = 0; i < supportedCategories.length; i++) {
+                if (supportedCategories[i] == category) {
+                    supportedCategories[i] = supportedCategories[supportedCategories.length - 1];
+                    supportedCategories.pop();
+                    break;
+                }
+            }
+        }
+        
+        emit AssetRemoved(_symbol, category);
     }
 
     /**
@@ -225,6 +290,44 @@ contract FlareFlip is Ownable {
      */
     function getAllSupportedAssets() external view returns (string[] memory) {
         return supportedAssets;
+    }
+
+    /**
+ * @dev Get all assets for a specific category
+ * @param _category The category ID
+ * @return Array of asset symbols in the category
+ */
+function getAssetsByCategory(uint8 _category) external view returns (string[] memory) {
+    return categorizedAssets[_category];
+}
+
+    /**
+     * @dev Get all supported categories
+     * @return categoryIds Array of category IDs
+     * @return _categoryNames Array of category names
+     */
+    function getAllCategories() external view returns (uint8[] memory categoryIds, string[] memory _categoryNames) {
+        categoryIds = new uint8[](supportedCategories.length);
+        _categoryNames = new string[](supportedCategories.length);
+        
+        for (uint i = 0; i < supportedCategories.length; i++) {
+            uint8 catId = supportedCategories[i];
+            categoryIds[i] = catId;
+            _categoryNames[i] = categoryNames[catId];
+        }
+        
+        return (categoryIds, _categoryNames);
+    }
+
+    /**
+     * @dev Get feed ID by category and asset name
+     * @param _categoryName Category name
+     * @param _assetName Asset name
+     * @return feedId The FTSO feed ID
+     */
+    function getFeedIdByCategoryAndName(string memory _categoryName, string memory _assetName) 
+        external view returns (bytes21) {
+        return categoryNameToFeedId[_categoryName][_assetName];
     }
 
     /**
@@ -411,11 +514,26 @@ contract FlareFlip is Ownable {
      * @return The winning selection
      */
     function _resolveTie(uint _poolId, uint _round) internal returns (PlayerChoice) {
-        updateMarketPrice(_poolId);
+        // Since _resolveTie is an internal function called by the contract itself,
+        // we need to ensure it can still update prices even during cooldown
+        Pool storage pool = pools[_poolId];
+        MarketData storage data = poolMarketData[_poolId];
+        
+        // Only fetch new price if it hasn't been updated recently (within last minute)
+        if (block.timestamp > data.lastUpdated + 1 minutes) {
+            (uint256 currentPrice, , uint64 timestamp) = _getCurrentPrice(pool.feedId);
+            
+            if (data.startPrice == 0) {
+                data.startPrice = currentPrice;
+            }
+            
+            data.lastPrice = currentPrice;
+            data.lastUpdated = block.timestamp;
+        }
+        
         uint256 randomValue = getFlareRandomNumber(_poolId, _round);
         
-        MarketData storage marketData = poolMarketData[_poolId];
-        bool priceIncreased = (marketData.lastPrice > marketData.startPrice);
+        bool priceIncreased = (data.lastPrice > data.startPrice);
         
         PlayerChoice winningSelection;
         
@@ -429,8 +547,8 @@ contract FlareFlip is Ownable {
         emit TieBrokenByHybrid(
             _poolId, 
             _round, 
-            marketData.startPrice, 
-            marketData.lastPrice, 
+            data.startPrice, 
+            data.lastPrice, 
             randomValue,
             winningSelection
         );
@@ -576,17 +694,26 @@ contract FlareFlip is Ownable {
     function updateMarketPrice(uint _poolId) public poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
         require(pool.status == PoolStatus.ACTIVE, "Pool not active");
+        
+        // Only allow the pool creator (staker) or contract owner to update price
+        require(msg.sender == pool.creator || msg.sender == owner(), "Not authorized");
+        
+        MarketData storage data = poolMarketData[_poolId];
+        
+        // Add cooldown period (5 minutes) to prevent excessive updates
+        uint256 updateCooldown = 5 minutes;
+        require(block.timestamp >= data.lastUpdated + updateCooldown, "Update cooldown period not met");
 
         (uint256 currentPrice, , uint64 timestamp) = _getCurrentPrice(pool.feedId);
 
-        MarketData storage data = poolMarketData[_poolId];
-        
         if (data.startPrice == 0) {
             data.startPrice = currentPrice;
         }
         
         data.lastPrice = currentPrice;
         data.lastUpdated = block.timestamp;
+        
+        emit MarketPriceUpdated(_poolId, currentPrice, block.timestamp);
     }
 
     /**
@@ -737,13 +864,5 @@ contract FlareFlip is Ownable {
         minimumStakingPeriod = _period;
     }
 
-    /**
-     * @dev Withdraw funds in case of emergency
-     * @param _amount Amount to withdraw
-     */
-    function emergencyWithdraw(uint256 _amount) external onlyOwner {
-        require(_amount <= address(this).balance, "Insufficient balance");
-        (bool success, ) = payable(owner()).call{value: _amount}("");
-        require(success, "Transfer failed");
-    }
+   
 }

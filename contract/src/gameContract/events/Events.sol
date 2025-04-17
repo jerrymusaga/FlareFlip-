@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "../main.sol";
+import "src/gameContract/FlareFlip.sol";
 
 library Events {
     
