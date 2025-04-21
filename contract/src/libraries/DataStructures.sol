@@ -50,3 +50,9 @@ struct StakerInfo {
     uint256 totalRewards;
     uint256 lastStakeTimestamp;
 }
+
+struct PriceData {
+    uint256 price;
+    int8 decimals;  
+    uint64 timestamp;
+}

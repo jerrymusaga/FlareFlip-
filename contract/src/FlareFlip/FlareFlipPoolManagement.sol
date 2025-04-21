@@ -88,14 +88,16 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         
         Pool storage newPool = pools[poolId];
         // Initialize market data using library
-        uint256 feePaid = poolMarketData[poolId].initializeMarketData(
+        PriceFeedLibrary.initializeMarketData(
+            poolMarketData[poolId], 
             assetToFeedId[_assetSymbol],
             ftsoV2,
             feeCalculator,
             feedFees
         );
         
-        require(address(this).balance >= feePaid, "Insufficient balance for feed fee");
+        
+        // require(address(this).balance >= feePaid, "Insufficient balance for feed fee");
 
         newPool.entryFee = _entryFee;
         newPool.maxParticipants = _maxParticipants;

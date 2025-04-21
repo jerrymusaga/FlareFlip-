@@ -9,6 +9,7 @@ import "./libraries/DataStructures.sol";
 import "./libraries/PriceFeedLibrary.sol";
 import "./libraries/RandomNumberLibrary.sol";
 
+
 contract FlareFlipBase is Ownable {
     using PriceFeedLibrary for MarketData;
     using RandomNumberLibrary for RandomNumberV2Interface;
@@ -32,7 +33,7 @@ contract FlareFlipBase is Ownable {
     mapping(uint => MarketData) public poolMarketData;
     mapping(address => uint[]) public userPools;
     mapping(uint => mapping(uint => uint256)) public roundRandomNumbers;
-
+    
 
     
     // Events

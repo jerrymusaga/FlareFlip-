@@ -95,8 +95,11 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         
         // Use library for price updates
         if (block.timestamp > data.lastUpdated + 1 minutes) {
-            PriceFeedLibrary.PriceData memory priceData = 
-                pool.feedId.getCurrentPrice(ftsoV2, feedFees);
+            PriceFeedLibrary.PriceData memory priceData = PriceFeedLibrary.getCurrentPrice(
+                pool.feedId,
+                ftsoV2,
+                feedFees[pool.feedId]  
+            );
             
             if (data.startPrice == 0) {
                 data.startPrice = priceData.price;
@@ -242,13 +245,12 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         MarketData storage data = poolMarketData[_poolId];
         require(block.timestamp >= data.lastUpdated + 5 minutes, "Cooldown active");
 
-        poolMarketData[_poolId].updateMarketData(
-            pools[_poolId].feedId,
+        data.updateMarketData(
+            pool.feedId,
             ftsoV2,
-            feedFees[pools[_poolId].feedId]
+            feedFees[pool.feedId]
         );
-
         
-        emit MarketPriceUpdated(_poolId, poolMarketData[_poolId].lastPrice, poolMarketData[_poolId].lastUpdated);
+        emit MarketPriceUpdated(_poolId, data.lastPrice, data.lastUpdated);
     }
 }

@@ -15,7 +15,7 @@ library PriceFeedLibrary {
         uint64 timestamp;
     }
 
-     function initializeMarketData(
+     function initMarketData(
         MarketData storage data,
         bytes21 feedId,
         FtsoV2Interface ftsoV2,
@@ -39,19 +39,25 @@ library PriceFeedLibrary {
         data.priceDecimals = 18;
     }
 
-    function updateMarketData(
+    function initializeMarketData(
         MarketData storage data,
         bytes21 feedId,
         FtsoV2Interface ftsoV2,
-        uint256 feedFee
-    ) external returns (PriceData memory) {
-        (uint256 price, int8 decimals, uint64 timestamp) = ftsoV2.getFeedById{value: feedFee}(feedId);
+        IFeeCalculator feeCalculator,
+        mapping(bytes21 => uint256) storage feedFees
+    ) external {  
+        bytes21[] memory feedIds = new bytes21[](1);
+        feedIds[0] = feedId;
+        uint256 fee = feeCalculator.calculateFeeByIds(feedIds);
+        feedFees[feedId] = fee;
+
+        (uint256 price, int8 decimals,) = ftsoV2.getFeedById{value: fee}(feedId);
         
-        uint256 normalizedPrice = normalizeDecimals(price, decimals);
-        data.lastPrice = normalizedPrice;
-        data.lastUpdated = timestamp;
-        
-        return PriceData(normalizedPrice, timestamp);
+        data.startPrice = normalizeDecimals(price, decimals);
+        data.lastPrice = data.startPrice;
+        data.startTimestamp = block.timestamp;
+        data.lastUpdated = block.timestamp;
+        data.priceDecimals = 18;
     }
 
     function normalizeDecimals(uint256 price, int8 decimals) internal pure returns (uint256) {
@@ -74,5 +80,17 @@ library PriceFeedLibrary {
         );
     }
 
+    
+    function updateMarketData(
+        MarketData storage data, 
+        bytes21 feedId,
+        FtsoV2Interface ftsoV2,
+        uint256 feedFee
+    ) external { 
+        (uint256 price, int8 decimals, uint64 timestamp) = ftsoV2.getFeedById{value: feedFee}(feedId);
+        
+        data.lastPrice = normalizeDecimals(price, decimals);
+        data.lastUpdated = timestamp;
+    }
     
 }
