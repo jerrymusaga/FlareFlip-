@@ -9,39 +9,70 @@ import {RandomNumberV2Interface} from "dependencies/flare-periphery-0.0.22/src/c
 import "./DataStructures.sol";
 
 library PriceFeedLibrary {
-    function initializeMarketData(
+    struct PriceData {
+        uint256 price;
+        int8 decimals;
+        uint64 timestamp;
+    }
+
+     function initializeMarketData(
         MarketData storage data,
         bytes21 feedId,
         FtsoV2Interface ftsoV2,
         IFeeCalculator feeCalculator,
         mapping(bytes21 => uint256) storage feedFees
     ) external {
+        // Calculate fee
         bytes21[] memory feedIds = new bytes21[](1);
         feedIds[0] = feedId;
-        feedFees[feedId] = feeCalculator.calculateFeeByIds(feedIds);
+        uint256 fee = feeCalculator.calculateFeeByIds(feedIds);
+        feedFees[feedId] = fee;
+
+        // Get price
+        (uint256 price, int8 decimals,) = ftsoV2.getFeedById{value: fee}(feedId);
         
-        (uint256 price, int8 decimals, ) = ftsoV2.getFeedById{value: feedFees[feedId]}(feedId);
-        
-        data.startPrice = price;
-        data.lastPrice = price;
+        // Initialize
+        data.startPrice = normalizeDecimals(price, decimals);
+        data.lastPrice = data.startPrice;
         data.startTimestamp = block.timestamp;
         data.lastUpdated = block.timestamp;
-        data.priceDecimals = uint256(uint8(decimals));
+        data.priceDecimals = 18;
     }
 
-    function updatePrice(
+    function updateMarketData(
         MarketData storage data,
         bytes21 feedId,
         FtsoV2Interface ftsoV2,
         uint256 feedFee
-    ) external returns (uint256 currentPrice) {
-        (currentPrice, , ) = ftsoV2.getFeedById{value: feedFee}(feedId);
+    ) external returns (PriceData memory) {
+        (uint256 price, int8 decimals, uint64 timestamp) = ftsoV2.getFeedById{value: feedFee}(feedId);
         
-        if (data.startPrice == 0) {
-            data.startPrice = currentPrice;
-        }
+        uint256 normalizedPrice = normalizeDecimals(price, decimals);
+        data.lastPrice = normalizedPrice;
+        data.lastUpdated = timestamp;
         
-        data.lastPrice = currentPrice;
-        data.lastUpdated = block.timestamp;
+        return PriceData(normalizedPrice, timestamp);
     }
+
+    function normalizeDecimals(uint256 price, int8 decimals) internal pure returns (uint256) {
+        return decimals < 18 ? 
+            price * (10 ** (18 - uint8(decimals))) :
+            price / (10 ** (uint8(decimals) - 18));
+    }
+
+    function getCurrentPrice(
+        bytes21 feedId,
+        FtsoV2Interface ftsoV2,
+        uint256 feedFee
+    ) external returns (PriceData memory) {
+        (uint256 price, int8 decimals, uint64 timestamp) = ftsoV2.getFeedById{value: feedFee}(feedId);
+        
+        return PriceData(
+            normalizeDecimals(price, decimals),
+            decimals,  
+            timestamp
+        );
+    }
+
+    
 }

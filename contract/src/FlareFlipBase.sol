@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "dependencies/@openzeppelin-contracts-5.2.0-rc.1/access/Ownable.sol";
 import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
 import {IFeeCalculator} from "dependencies/flare-periphery-0.0.22/src/coston2/IFeeCalculator.sol";
 import {RandomNumberV2Interface} from "dependencies/flare-periphery-0.0.22/src/coston2/RandomNumberV2Interface.sol";
@@ -11,6 +11,7 @@ import "./libraries/RandomNumberLibrary.sol";
 
 contract FlareFlipBase is Ownable {
     using PriceFeedLibrary for MarketData;
+    using RandomNumberLibrary for RandomNumberV2Interface;
     
     // State variables
     uint256 public constant MINIMUM_STAKE = 100 ether;
@@ -30,6 +31,9 @@ contract FlareFlipBase is Ownable {
     mapping(uint => TradingPair) public poolTradingPairs;
     mapping(uint => MarketData) public poolMarketData;
     mapping(address => uint[]) public userPools;
+    mapping(uint => mapping(uint => uint256)) public roundRandomNumbers;
+
+
     
     // Events
     event Staked(address staker, uint256 amount);
@@ -88,4 +92,7 @@ contract FlareFlipBase is Ownable {
         require(_randomNumberV2 != address(0), "Invalid RandomNumberV2 address");
         randomNumberV2 = RandomNumberV2Interface(_randomNumberV2);
     }
+
+    
+    
 }

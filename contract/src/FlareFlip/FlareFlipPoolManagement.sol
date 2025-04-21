@@ -61,6 +61,11 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         require(stakers[msg.sender].stakedAmount >= MINIMUM_STAKE, "Not a staker or insufficient stake");
         _;
     }
+
+    modifier poolActive(uint _poolId) {
+        require(pools[_poolId].status == PoolStatus.ACTIVE, "Pool inactive");
+        _;
+    }
     
     function createPool(
         uint _entryFee,
@@ -76,10 +81,22 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         
         bytes21 feedId = assetToFeedId[_assetSymbol];
         require(feedId != bytes21(0), "Invalid feed ID");
+
+        
         
         uint poolId = poolCount++;
         
         Pool storage newPool = pools[poolId];
+        // Initialize market data using library
+        uint256 feePaid = poolMarketData[poolId].initializeMarketData(
+            assetToFeedId[_assetSymbol],
+            ftsoV2,
+            feeCalculator,
+            feedFees
+        );
+        
+        require(address(this).balance >= feePaid, "Insufficient balance for feed fee");
+
         newPool.entryFee = _entryFee;
         newPool.maxParticipants = _maxParticipants;
         newPool.assetSymbol = _assetSymbol;
@@ -134,7 +151,12 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         if (pool.currentParticipants == pool.maxParticipants) {
             pool.status = PoolStatus.ACTIVE;
             pool.currentActiveParticipants = pool.currentParticipants;
-            _initializeMarketData(_poolId);
+            poolMarketData[_poolId].initializeMarketData(
+                pool.feedId,
+                ftsoV2,
+                feeCalculator,
+                feedFees
+                );
             emit PoolActivated(_poolId);
         }
 
@@ -230,4 +252,6 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         
         emit AssetRemoved(_symbol, category);
     }
+
+     
 }
