@@ -71,11 +71,11 @@ library PriceFeedLibrary {
         FtsoV2Interface ftsoV2,
         uint256 feedFee
     ) external returns (PriceData memory) {
-        (uint256 price, int8 decimals, uint64 timestamp) = ftsoV2.getFeedById{value: feedFee}(feedId);
+        (uint256 priceInWei, uint64 timestamp) = ftsoV2.getFeedByIdInWei{value: feedFee}(feedId);
         
         return PriceData(
-            normalizeDecimals(price, decimals),
-            decimals,  
+            priceInWei,
+            18,  
             timestamp
         );
     }

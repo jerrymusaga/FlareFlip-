@@ -2,15 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Ownable} from "dependencies/@openzeppelin-contracts-5.2.0-rc.1/access/Ownable.sol";
+import {ReentrancyGuard} from "dependencies/@openzeppelin-contracts-5.2.0-rc.1/utils/ReentrancyGuard.sol";
 import {ContractRegistry} from "dependencies/flare-periphery-0.0.22/src/coston2/ContractRegistry.sol";
 import {IFeeCalculator} from "dependencies/flare-periphery-0.0.22/src/coston2/IFeeCalculator.sol";
 import {RandomNumberV2Interface} from "dependencies/flare-periphery-0.0.22/src/coston2/RandomNumberV2Interface.sol";
 import "./libraries/DataStructures.sol";
 import "./libraries/PriceFeedLibrary.sol";
 import "./libraries/RandomNumberLibrary.sol";
+import "./libraries/DataStructures.sol";
 
 
-contract FlareFlipBase is Ownable {
+contract FlareFlipBase is Ownable, ReentrancyGuard {
     using PriceFeedLibrary for MarketData;
     using RandomNumberLibrary for RandomNumberV2Interface;
     
@@ -42,12 +44,12 @@ contract FlareFlipBase is Ownable {
     event CreatorFeePercentageUpdated(uint256 newPercentage);
     
     constructor() Ownable(msg.sender) {
-        ftsoV2 = ContractRegistry.getFtsoV2();
-        feeCalculator = ContractRegistry.getFeeCalculator();
-        randomNumberV2 = ContractRegistry.getRandomNumberV2();
+        
     }
+
+     
     
-    function stake() external payable {
+    function stake() external payable nonReentrant {
         require(msg.value >= MINIMUM_STAKE, "Stake amount below minimum");
         
         StakerInfo storage stakerInfo = stakers[msg.sender];
@@ -57,7 +59,7 @@ contract FlareFlipBase is Ownable {
         emit Staked(msg.sender, msg.value);
     }
     
-    function unstake(uint256 _amount) external {
+    function unstake(uint256 _amount) external nonReentrant {
         StakerInfo storage stakerInfo = stakers[msg.sender];
         require(stakerInfo.stakedAmount >= _amount, "Insufficient staked amount");
         require(block.timestamp >= stakerInfo.lastStakeTimestamp + minimumStakingPeriod, "Minimum staking period not met");

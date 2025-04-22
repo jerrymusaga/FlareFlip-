@@ -51,8 +51,18 @@ struct StakerInfo {
     uint256 lastStakeTimestamp;
 }
 
-struct PriceData {
-    uint256 price;
-    int8 decimals;  
-    uint64 timestamp;
+struct PoolDetails {
+    uint entryFee;
+    uint maxParticipants;
+    uint currentParticipants;
+    uint prizePool;
+    PoolStatus status;
+    address creator;
+    string assetSymbol;
+    uint startPrice;
+    uint currentPrice;
+    uint priceUpdated;
+    uint roundDeadline;
+    bool priceInitialized;
 }
+

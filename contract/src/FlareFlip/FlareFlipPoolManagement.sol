@@ -62,10 +62,10 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         _;
     }
 
-    modifier poolActive(uint _poolId) {
-        require(pools[_poolId].status == PoolStatus.ACTIVE, "Pool inactive");
-        _;
-    }
+    // modifier poolActive(uint _poolId) {
+    //     require(pools[_poolId].status == PoolStatus.ACTIVE, "Pool inactive");
+    //     _;
+    // }
     
     function createPool(
         uint _entryFee,
@@ -131,7 +131,7 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
     }
     
    
-    function joinPool(uint _poolId) external payable poolExists(_poolId) {
+    function joinPool(uint _poolId) external payable nonReentrant  poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
         require(pool.status == PoolStatus.OPENED, "Pool not open");
         require(msg.value >= pool.entryFee, "Insufficient fee");

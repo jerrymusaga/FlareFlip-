@@ -16,7 +16,7 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
     event TieBrokenByHybrid(uint poolId, uint round, uint256 startPrice, uint256 lastPrice, uint256 randomValue, PlayerChoice winningSelection);
     event MarketPriceUpdated(uint poolId, uint256 price, uint256 timestamp);
     
-    function makeSelection(uint _poolId, PlayerChoice _choice) external poolActive(_poolId) poolExists(_poolId) {
+    function makeSelection(uint _poolId, PlayerChoice _choice) external  poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
         Player storage player = pool.players[msg.sender];
         
@@ -70,13 +70,19 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         uint headsCount = pool.headsCount[currentRound];
         uint tailsCount = pool.tailsCount[currentRound];
 
+        // Require at least one selection to resolve
+        require(headsCount > 0 || tailsCount > 0, "No selections made");
+        
         PlayerChoice winningSelection;
-    
-        if(headsCount < tailsCount) {
+        
+        // Minority wins logic
+        if (headsCount < tailsCount) {
             winningSelection = PlayerChoice.HEADS;
         } else if (tailsCount < headsCount) {
             winningSelection = PlayerChoice.TAILS;
         } else {
+            // Only resolve tie if we have actual votes
+            require(headsCount > 0, "Cannot resolve zero-vote tie");
             winningSelection = _resolveTie(_poolId, currentRound);
         }
 
@@ -93,23 +99,14 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         Pool storage pool = pools[_poolId];
         MarketData storage data = poolMarketData[_poolId];
         
-        // Use library for price updates
-        if (block.timestamp > data.lastUpdated + 1 minutes) {
-            PriceFeedLibrary.PriceData memory priceData = PriceFeedLibrary.getCurrentPrice(
-                pool.feedId,
-                ftsoV2,
-                feedFees[pool.feedId]  
-            );
-            
-            if (data.startPrice == 0) {
-                data.startPrice = priceData.price;
-            }
-            
-            data.lastPrice = priceData.price;
-            data.lastUpdated = priceData.timestamp;
-        }
+        // Force price update if stale
+        data.updateMarketData(
+            pool.feedId,
+            ftsoV2,
+            feedFees[pool.feedId]
+        );
         
-        // Use library for random number
+        // Get fresh random number
         uint256 randomValue = randomNumberV2.getRandomNumber(
             _poolId, 
             _round, 
@@ -117,26 +114,30 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         );
         
         bool priceIncreased = (data.lastPrice > data.startPrice);
+        bool randomEven = (randomValue % 2 == 0);
         
-        PlayerChoice winningSelection;
-        
-        if ((priceIncreased && randomValue % 2 == 0) || 
-            (!priceIncreased && randomValue % 2 == 1)) {
-            winningSelection = PlayerChoice.HEADS;
+        // HEADS wins if: (price↑ AND random even) OR (price↓ AND random odd)
+        if ((priceIncreased && randomEven) || (!priceIncreased && !randomEven)) {
+            emit TieBrokenByHybrid(
+                _poolId, 
+                _round, 
+                data.startPrice, 
+                data.lastPrice, 
+                randomValue,
+                PlayerChoice.HEADS
+            );
+            return PlayerChoice.HEADS;
         } else {
-            winningSelection = PlayerChoice.TAILS;
+            emit TieBrokenByHybrid(
+                _poolId, 
+                _round, 
+                data.startPrice, 
+                data.lastPrice, 
+                randomValue,
+                PlayerChoice.TAILS
+            );
+            return PlayerChoice.TAILS;
         }
-        
-        emit TieBrokenByHybrid(
-            _poolId, 
-            _round, 
-            data.startPrice, 
-            data.lastPrice, 
-            randomValue,
-            winningSelection
-        );
-        
-        return winningSelection;
     }
 
     /**
@@ -152,32 +153,29 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
     ) internal {
         Pool storage pool = pools[_poolId];
         
+        // Clear previous results
         delete pool.roundWinners[_round];
         delete pool.roundLosers[_round];
 
-        uint remainingPlayers = 0;
         for (uint i = 0; i < pool.playersInPool.length; i++) {
             address playerAddress = pool.playersInPool[i];
             Player storage player = pool.players[playerAddress];
 
             if (!player.isEliminated && pool.roundParticipation[_round][playerAddress]) {
-                if (pool.roundSelection[_round][playerAddress] != winningSelection) {
+                if (pool.roundSelection[_round][playerAddress] == winningSelection) {
+                    pool.roundWinners[_round].push(playerAddress);
+                } else {
                     player.isEliminated = true;
                     pool.currentActiveParticipants--;
                     pool.roundLosers[_round].push(playerAddress);
-                } else {
-                    remainingPlayers++;
-                    pool.roundWinners[_round].push(playerAddress);
                 }
             }
         }
 
-        pool.roundCompleted[_round] = true;
+        // Emit events and handle pool completion
         emit RoundCompleted(_poolId, _round, winningSelection);
-        emit RoundWinners(_poolId, _round, pool.roundWinners[_round]);
-        emit RoundLosers(_poolId, _round, pool.roundLosers[_round]);
-
-        if (remainingPlayers <= pool.maxWinners || remainingPlayers <= 1) {
+        
+        if (pool.roundWinners[_round].length <= 1) {
             _finalizePool(_poolId);
         } else {
             pool.currentRound++;
@@ -218,19 +216,18 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
      */
     function _initializeRoundMarketData(uint _poolId) internal {
         Pool storage pool = pools[_poolId];
-        
-        uint256 fee = feedFees[pool.feedId];
-        
-        PriceFeedLibrary.PriceData memory priceData = PriceFeedLibrary.getCurrentPrice(
-            pool.feedId,
-            ftsoV2,
-            fee
-        );
-        
         MarketData storage data = poolMarketData[_poolId];
-        data.startPrice = priceData.price;
-        data.lastPrice = priceData.price;
-        data.lastUpdated = priceData.timestamp;
+        
+        // Pay the fee and get fresh data
+        uint256 fee = feedFees[pool.feedId];
+        (uint256 price, int8 decimals, uint64 timestamp) = 
+            ftsoV2.getFeedById{value: fee}(pool.feedId);
+        
+        data.startPrice = price;
+        data.lastPrice = price;
+        data.startTimestamp = timestamp;
+        data.lastUpdated = timestamp;
+        data.priceDecimals = uint256(uint8(decimals));
     }
 
     /**

@@ -7,7 +7,7 @@ abstract contract FlareFlipPrizeDistribution is FlareFlipGameLogic {
     event PrizeClaimed(uint poolId, address winner, uint amount);
     event CreatorRewardPaid(uint poolId, address creator, uint amount);
     
-    function claimPrize(uint _poolId) external poolExists(_poolId) {
+    function claimPrize(uint _poolId) external nonReentrant poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
         require(pool.status == PoolStatus.CLOSED, "Pool not closed");
         require(!pool.prizeClaimed, "Prize already claimed");

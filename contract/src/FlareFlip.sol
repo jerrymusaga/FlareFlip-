@@ -6,6 +6,7 @@ import "./FlareFlip/FlareFlipPoolManagement.sol";
 import "./FlareFlip/FlareFlipGameLogic.sol";
 import "./FlareFlip/FlareFlipPrizeDistribution.sol";
 import "./FlareFlip/FlareFlipViews.sol";
+import "./libraries/DataStructures.sol";
 
 contract FlareFlip is 
     FlareFlipBase,
@@ -14,5 +15,7 @@ contract FlareFlip is
     FlareFlipPrizeDistribution,
     FlareFlipViews
 {
-    
+    constructor() FlareFlipBase() {
+       
+    }
 }
