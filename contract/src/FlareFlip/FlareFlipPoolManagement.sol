@@ -8,6 +8,31 @@ import "../libraries/PriceFeedLibrary.sol";
 abstract contract FlareFlipPoolManagement is FlareFlipBase {
     using PriceFeedLibrary for MarketData;
     
+    // Common custom errors (shared between contracts)
+    error PoolNotOpen();
+    error InsufficientFee();
+    error PoolFull();
+    error AlreadyJoined();
+    error CreatorCannotJoin();
+    error PoolNotClosed();
+    error PrizeAlreadyClaimed();
+    error NotAWinner();
+    error AlreadyClaimed();
+    
+    // Custom errors unique to this contract
+    error PoolDoesNotExist();
+    error NotStakerOrInsufficientStake();
+    error EntryFeeTooLow();
+    error InsufficientParticipants();
+    error AssetNotSupported();
+    error MaxPoolsPerStakerReached();
+    error InvalidFeedId();
+    error SymbolEmpty();
+    error CategoryNameEmpty();
+    error AssetAlreadySupported();
+    error AssetNotFound();
+    error PoolInactive();
+    
     uint public poolCount;
     
     struct Pool {
@@ -53,36 +78,29 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
     event CategoryAdded(uint8 categoryId, string categoryName);
     
     modifier poolExists(uint _poolId) {
-        require(_poolId < poolCount, "Pool does not exist");
+        if (_poolId >= poolCount) revert PoolDoesNotExist();
         _;
     }
     
     modifier onlyStaker() {
-        require(stakers[msg.sender].stakedAmount >= MINIMUM_STAKE, "Not a staker or insufficient stake");
+        if (stakers[msg.sender].stakedAmount < MINIMUM_STAKE) revert NotStakerOrInsufficientStake();
         _;
     }
-
-    // modifier poolActive(uint _poolId) {
-    //     require(pools[_poolId].status == PoolStatus.ACTIVE, "Pool inactive");
-    //     _;
-    // }
     
     function createPool(
         uint _entryFee,
         uint _maxParticipants,
         string memory _assetSymbol
     ) external onlyStaker {
-        require(_entryFee > 0, "Entry fee must be > 0");
-        require(_maxParticipants > 1, "Need at least 2 participants");
-        require(isAssetSupported[_assetSymbol], "Asset not supported");
+        if (_entryFee == 0) revert EntryFeeTooLow();
+        if (_maxParticipants <= 1) revert InsufficientParticipants();
+        if (!isAssetSupported[_assetSymbol]) revert AssetNotSupported();
         
         StakerInfo storage stakerInfo = stakers[msg.sender];
-        require(stakerInfo.activePoolsCount < MAX_POOLS_PER_STAKER, "Max pools per staker reached");
+        if (stakerInfo.activePoolsCount >= MAX_POOLS_PER_STAKER) revert MaxPoolsPerStakerReached();
         
         bytes21 feedId = assetToFeedId[_assetSymbol];
-        require(feedId != bytes21(0), "Invalid feed ID");
-
-        
+        if (feedId == bytes21(0)) revert InvalidFeedId();
         
         uint poolId = poolCount++;
         
@@ -96,9 +114,6 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
             feedFees
         );
         
-        
-        // require(address(this).balance >= feePaid, "Insufficient balance for feed fee");
-
         newPool.entryFee = _entryFee;
         newPool.maxParticipants = _maxParticipants;
         newPool.assetSymbol = _assetSymbol;
@@ -131,13 +146,13 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
     }
     
    
-    function joinPool(uint _poolId) external payable nonReentrant  poolExists(_poolId) {
+    function joinPool(uint _poolId) external payable nonReentrant poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
-        require(pool.status == PoolStatus.OPENED, "Pool not open");
-        require(msg.value >= pool.entryFee, "Insufficient fee");
-        require(pool.currentParticipants < pool.maxParticipants, "Pool full");
-        require(pool.players[msg.sender].playerAddress == address(0), "Already joined");
-        require(pool.creator != msg.sender, "Creator cannot join own pool");
+        if (pool.status != PoolStatus.OPENED) revert PoolNotOpen();
+        if (msg.value < pool.entryFee) revert InsufficientFee();
+        if (pool.currentParticipants >= pool.maxParticipants) revert PoolFull();
+        if (pool.players[msg.sender].playerAddress != address(0)) revert AlreadyJoined();
+        if (pool.creator == msg.sender) revert CreatorCannotJoin();
 
         Player storage newPlayer = pool.players[msg.sender];
         newPlayer.playerAddress = msg.sender;
@@ -178,10 +193,10 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         string memory _symbol,
         bytes21 _feedId
     ) external onlyOwner {
-        require(bytes(_symbol).length > 0, "Symbol cannot be empty");
-        require(bytes(_categoryName).length > 0, "Category name cannot be empty");
-        require(_feedId != bytes21(0), "Invalid feed ID");
-        require(!isAssetSupported[_symbol], "Asset already supported");
+        if (bytes(_symbol).length == 0) revert SymbolEmpty();
+        if (bytes(_categoryName).length == 0) revert CategoryNameEmpty();
+        if (_feedId == bytes21(0)) revert InvalidFeedId();
+        if (isAssetSupported[_symbol]) revert AssetAlreadySupported();
         
         // Store the relationship between category, name and feed ID
         categoryNameToFeedId[_categoryName][_symbol] = _feedId;
@@ -201,59 +216,58 @@ abstract contract FlareFlipPoolManagement is FlareFlipBase {
         
         emit AssetAdded(_category, _categoryName, _symbol, _feedId);
     }
+    
 
     /**
      * @dev Remove a supported asset (admin only)
      * @param _symbol Asset symbol to remove
      */
-    function removeSupportedAsset(string memory _symbol) external onlyOwner {
-        require(isAssetSupported[_symbol], "Asset not supported");
+    // function removeSupportedAsset(string memory _symbol) external onlyOwner {
+    //     if (!isAssetSupported[_symbol]) revert AssetNotFound();
         
-        bytes21 feedId = assetToFeedId[_symbol];
-        uint8 category = feedCategories[feedId];
+    //     bytes21 feedId = assetToFeedId[_symbol];
+    //     uint8 category = feedCategories[feedId];
         
-        // Remove from category mapping
-        string[] storage assetsInCategory = categorizedAssets[category];
-        for (uint i = 0; i < assetsInCategory.length; i++) {
-            if (keccak256(abi.encodePacked(assetsInCategory[i])) == keccak256(abi.encodePacked(_symbol))) {
-                // Replace with last element and pop
-                assetsInCategory[i] = assetsInCategory[assetsInCategory.length - 1];
-                assetsInCategory.pop();
-                break;
-            }
-        }
+    //     // Remove from category mapping
+    //     string[] storage assetsInCategory = categorizedAssets[category];
+    //     for (uint i = 0; i < assetsInCategory.length; i++) {
+    //         if (keccak256(abi.encodePacked(assetsInCategory[i])) == keccak256(abi.encodePacked(_symbol))) {
+    //             // Replace with last element and pop
+    //             assetsInCategory[i] = assetsInCategory[assetsInCategory.length - 1];
+    //             assetsInCategory.pop();
+    //             break;
+    //         }
+    //     }
         
-        // Remove from main arrays and mappings
-        isAssetSupported[_symbol] = false;
-        assetToFeedId[_symbol] = bytes21(0);
+    //     // Remove from main arrays and mappings
+    //     isAssetSupported[_symbol] = false;
+    //     assetToFeedId[_symbol] = bytes21(0);
         
-        // Remove from supportedAssets array
-        for (uint i = 0; i < supportedAssets.length; i++) {
-            if (keccak256(abi.encodePacked(supportedAssets[i])) == keccak256(abi.encodePacked(_symbol))) {
-                supportedAssets[i] = supportedAssets[supportedAssets.length - 1];
-                supportedAssets.pop();
-                break;
-            }
-        }
+    //     // Remove from supportedAssets array
+    //     for (uint i = 0; i < supportedAssets.length; i++) {
+    //         if (keccak256(abi.encodePacked(supportedAssets[i])) == keccak256(abi.encodePacked(_symbol))) {
+    //             supportedAssets[i] = supportedAssets[supportedAssets.length - 1];
+    //             supportedAssets.pop();
+    //             break;
+    //         }
+    //     }
         
-        // Check if this was the last asset in this category
-        if (assetsInCategory.length == 0) {
-            // Remove the category if no assets remain
-            isCategoryRegistered[category] = false;
-            delete categoryNames[category];
+    //     // Check if this was the last asset in this category
+    //     if (assetsInCategory.length == 0) {
+    //         // Remove the category if no assets remain
+    //         isCategoryRegistered[category] = false;
+    //         delete categoryNames[category];
             
-            // Remove from supportedCategories array
-            for (uint i = 0; i < supportedCategories.length; i++) {
-                if (supportedCategories[i] == category) {
-                    supportedCategories[i] = supportedCategories[supportedCategories.length - 1];
-                    supportedCategories.pop();
-                    break;
-                }
-            }
-        }
+    //         // Remove from supportedCategories array
+    //         for (uint i = 0; i < supportedCategories.length; i++) {
+    //             if (supportedCategories[i] == category) {
+    //                 supportedCategories[i] = supportedCategories[supportedCategories.length - 1];
+    //                 supportedCategories.pop();
+    //                 break;
+    //             }
+    //         }
+    //     }
         
-        emit AssetRemoved(_symbol, category);
-    }
-
-     
+    //     emit AssetRemoved(_symbol, category);
+    // }
 }

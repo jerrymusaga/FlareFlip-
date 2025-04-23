@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-
 import "./FlareFlipGameLogic.sol";
 
 abstract contract FlareFlipPrizeDistribution is FlareFlipGameLogic {
+    
+    error CreatorFeeTransferFailed();
+
     event PrizeClaimed(uint poolId, address winner, uint amount);
     event CreatorRewardPaid(uint poolId, address creator, uint amount);
-    
+
     function claimPrize(uint _poolId) external nonReentrant poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
-        require(pool.status == PoolStatus.CLOSED, "Pool not closed");
-        require(!pool.prizeClaimed, "Prize already claimed");
+        
+        if (pool.status != PoolStatus.CLOSED) revert PoolNotClosed();
+        if (pool.prizeClaimed) revert PrizeAlreadyClaimed();
         
         bool isWinner = false;
         for (uint i = 0; i < pool.finalWinners.length; i++) {
@@ -20,8 +23,8 @@ abstract contract FlareFlipPrizeDistribution is FlareFlipGameLogic {
             }
         }
         
-        require(isWinner, "Not a winner");
-        require(!pool.players[msg.sender].hasClaimed, "Already claimed");
+        if (!isWinner) revert NotAWinner();
+        if (pool.players[msg.sender].hasClaimed) revert AlreadyClaimed();
         
         pool.players[msg.sender].hasClaimed = true;
         
@@ -29,15 +32,13 @@ abstract contract FlareFlipPrizeDistribution is FlareFlipGameLogic {
         uint256 creatorFee = (totalPrize * creatorFeePercentage) / 10000;
         uint256 winnersPrize = totalPrize - creatorFee;
         uint256 prizePerWinner = winnersPrize / pool.finalWinners.length;
-        
         address creator = pool.creator;
+        
         if (creatorFee > 0) {
             StakerInfo storage stakerInfo = stakers[creator];
             stakerInfo.totalRewards += creatorFee;
-            
             (bool creatorSuccess,) = payable(creator).call{value: creatorFee}("");
-            require(creatorSuccess, "Creator fee transfer failed");
-            
+            if (!creatorSuccess) revert CreatorFeeTransferFailed();
             emit CreatorRewardPaid(_poolId, creator, creatorFee);
         }
         
@@ -54,7 +55,7 @@ abstract contract FlareFlipPrizeDistribution is FlareFlipGameLogic {
         }
         
         (bool success, ) = payable(msg.sender).call{value: prizePerWinner}("");
-        require(success, "Prize transfer failed");
+        if (!success) revert TransferFailed();
         
         emit PrizeClaimed(_poolId, msg.sender, prizePerWinner);
     }

@@ -8,6 +8,16 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
     using PriceFeedLibrary for MarketData;
     using PriceFeedLibrary for bytes21;
     using RandomNumberLibrary for RandomNumberV2Interface;
+
+    // Custom errors unique to this contract
+    error NotAPlayer();
+    error InvalidChoice();
+    error PlayerEliminated();
+    error AlreadyParticipated();
+    error NoSelectionsInRound();
+    error CannotResolveZeroVoteTie();
+    error NotAuthorized();
+    error UpdateCooldownActive();
     
     event RoundCompleted(uint poolId, uint round, PlayerChoice winningChoice);
     event RoundWinners(uint poolId, uint round, address[] winners);
@@ -16,15 +26,15 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
     event TieBrokenByHybrid(uint poolId, uint round, uint256 startPrice, uint256 lastPrice, uint256 randomValue, PlayerChoice winningSelection);
     event MarketPriceUpdated(uint poolId, uint256 price, uint256 timestamp);
     
-    function makeSelection(uint _poolId, PlayerChoice _choice) external  poolExists(_poolId) {
+    function makeSelection(uint _poolId, PlayerChoice _choice) external poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
         Player storage player = pool.players[msg.sender];
         
-        require(pool.status == PoolStatus.ACTIVE, "Pool inactive");
-        require(player.playerAddress != address(0), "Not a player");
-        require(_choice == PlayerChoice.HEADS || _choice == PlayerChoice.TAILS, "Invalid choice");
-        require(!player.isEliminated, "Player eliminated");
-        require(!pool.roundParticipation[pool.currentRound][msg.sender], "Already participated");
+        if (pool.status != PoolStatus.ACTIVE) revert PoolInactive();
+        if (player.playerAddress == address(0)) revert NotAPlayer();
+        if (_choice != PlayerChoice.HEADS && _choice != PlayerChoice.TAILS) revert InvalidChoice();
+        if (player.isEliminated) revert PlayerEliminated();
+        if (pool.roundParticipation[pool.currentRound][msg.sender]) revert AlreadyParticipated();
         
         pool.roundParticipation[pool.currentRound][msg.sender] = true;
         pool.roundSelection[pool.currentRound][msg.sender] = _choice;
@@ -71,7 +81,7 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         uint tailsCount = pool.tailsCount[currentRound];
 
         // Require at least one selection to resolve
-        require(headsCount > 0 || tailsCount > 0, "No selections made");
+        if (headsCount == 0 && tailsCount == 0) revert NoSelectionsInRound();
         
         PlayerChoice winningSelection;
         
@@ -82,7 +92,7 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
             winningSelection = PlayerChoice.TAILS;
         } else {
             // Only resolve tie if we have actual votes
-            require(headsCount > 0, "Cannot resolve zero-vote tie");
+            if (headsCount == 0) revert CannotResolveZeroVoteTie();
             winningSelection = _resolveTie(_poolId, currentRound);
         }
 
@@ -174,6 +184,8 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
 
         // Emit events and handle pool completion
         emit RoundCompleted(_poolId, _round, winningSelection);
+        emit RoundWinners(_poolId, _round, pool.roundWinners[_round]);
+        emit RoundLosers(_poolId, _round, pool.roundLosers[_round]);
         
         if (pool.roundWinners[_round].length <= 1) {
             _finalizePool(_poolId);
@@ -208,8 +220,6 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
         emit PoolCompleted(_poolId, pool.prizePool);
     }
 
-    
-
     /**
      * @dev Initialize market data for a new round
      * @param _poolId ID of the pool
@@ -236,11 +246,11 @@ abstract contract FlareFlipGameLogic is FlareFlipPoolManagement {
      */
     function updateMarketPrice(uint _poolId) public poolExists(_poolId) {
         Pool storage pool = pools[_poolId];
-        require(pool.status == PoolStatus.ACTIVE, "Pool not active");
-        require(msg.sender == pool.creator || msg.sender == owner(), "Not authorized");
+        if (pool.status != PoolStatus.ACTIVE) revert PoolInactive();
+        if (msg.sender != pool.creator && msg.sender != owner()) revert NotAuthorized();
         
         MarketData storage data = poolMarketData[_poolId];
-        require(block.timestamp >= data.lastUpdated + 5 minutes, "Cooldown active");
+        if (block.timestamp < data.lastUpdated + 5 minutes) revert UpdateCooldownActive();
 
         data.updateMarketData(
             pool.feedId,

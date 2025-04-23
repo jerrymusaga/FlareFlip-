@@ -12,15 +12,22 @@ import "./libraries/RandomNumberLibrary.sol";
 import "./libraries/DataStructures.sol";
 
 
-contract FlareFlipBase is Ownable, ReentrancyGuard {
+abstract contract FlareFlipBase is Ownable, ReentrancyGuard {
     using PriceFeedLibrary for MarketData;
     using RandomNumberLibrary for RandomNumberV2Interface;
+
+    error InsufficientStake();
+    error MinimumStakingPeriodNotMet();
+    error ActivePoolsExist();
+    error TransferFailed();
+    error InvalidFeePercentage();
+    error InvalidAddress();
     
     // State variables
-    uint256 public constant MINIMUM_STAKE = 100 ether;
+    uint256 public constant MINIMUM_STAKE = 20 ether;
     uint256 public constant MAX_POOLS_PER_STAKER = 3;
     uint256 public creatorFeePercentage = 500;
-    uint256 public minimumStakingPeriod = 7 days;
+    uint256 public minimumStakingPeriod = 5 days;
     
     // Contract interfaces
     FtsoV2Interface public ftsoV2;
@@ -50,31 +57,32 @@ contract FlareFlipBase is Ownable, ReentrancyGuard {
      
     
     function stake() external payable nonReentrant {
-        require(msg.value >= MINIMUM_STAKE, "Stake amount below minimum");
-        
+        if (msg.value < MINIMUM_STAKE) revert InsufficientStake();
+
         StakerInfo storage stakerInfo = stakers[msg.sender];
         stakerInfo.stakedAmount += msg.value;
         stakerInfo.lastStakeTimestamp = block.timestamp;
-        
+
         emit Staked(msg.sender, msg.value);
     }
-    
+
     function unstake(uint256 _amount) external nonReentrant {
         StakerInfo storage stakerInfo = stakers[msg.sender];
-        require(stakerInfo.stakedAmount >= _amount, "Insufficient staked amount");
-        require(block.timestamp >= stakerInfo.lastStakeTimestamp + minimumStakingPeriod, "Minimum staking period not met");
-        require(stakerInfo.activePoolsCount == 0, "Cannot unstake with active pools");
         
+        if (stakerInfo.stakedAmount < _amount) revert InsufficientStake();
+        if (block.timestamp < stakerInfo.lastStakeTimestamp + minimumStakingPeriod) revert MinimumStakingPeriodNotMet();
+        if (stakerInfo.activePoolsCount != 0) revert ActivePoolsExist();
+
         stakerInfo.stakedAmount -= _amount;
         
         (bool success, ) = payable(msg.sender).call{value: _amount}("");
-        require(success, "Transfer failed");
-        
+        if (!success) revert TransferFailed();
+
         emit Unstaked(msg.sender, _amount);
     }
     
     function setCreatorFeePercentage(uint256 _percentage) external onlyOwner {
-        require(_percentage <= 2000, "Fee percentage too high");
+        if (_percentage > 2000) revert InvalidFeePercentage();
         creatorFeePercentage = _percentage;
         emit CreatorFeePercentageUpdated(_percentage);
     }
@@ -84,15 +92,17 @@ contract FlareFlipBase is Ownable, ReentrancyGuard {
     }
     
     function setFtsoV2(address _ftsoV2) external onlyOwner {
+        if (_ftsoV2 == address(0)) revert InvalidAddress();
         ftsoV2 = FtsoV2Interface(_ftsoV2);
     }
     
     function setFeeCalculator(address _feeCalculator) external onlyOwner {
+        if (_feeCalculator == address(0)) revert InvalidAddress();
         feeCalculator = IFeeCalculator(_feeCalculator);
     }
     
     function setRandomNumberProvider(address _randomNumberV2) external onlyOwner {
-        require(_randomNumberV2 != address(0), "Invalid RandomNumberV2 address");
+        if (_randomNumberV2 == address(0)) revert InvalidAddress();
         randomNumberV2 = RandomNumberV2Interface(_randomNumberV2);
     }
 
