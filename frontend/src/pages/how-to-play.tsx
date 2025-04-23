@@ -29,7 +29,7 @@ const HowItWorksPage: React.FC = () => {
       <div className={`mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8 transition duration-700 ${animateIn ? 'opacity-100' : 'opacity-0 translate-y-4'}`}>
         <div className="text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+            <span onClick={()=> console.log("james")} className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
               How To Play & Win
             </span>
           </h1>
@@ -40,7 +40,7 @@ const HowItWorksPage: React.FC = () => {
       </div>
      
       {/* Tab Navigation */}
-    <div className={`mx-auto px-4 sm:px-6 lg:px-8 transition duration-700 delay-100 ${animateIn ? 'opacity-100' : 'opacity-0 translate-y-4'}`}>
+    <div className={`max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 transition duration-700 delay-100 ${animateIn ? 'opacity-100' : 'opacity-0 translate-y-4'}`}>
       <div className="flex justify-center space-x-2 md:space-x-6 border-b border-gray-700 pb-2">
         <button 
           onClick={() => handleTabChange('gameplay')} 
@@ -246,7 +246,7 @@ const HowItWorksPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-gray-300">
-                            Players who chose the option selected by the majority are eliminated from the game.
+                            Players who chose the option selected by the  are eliminated from the game.
                           </p>
                         </div>
                       </li>
