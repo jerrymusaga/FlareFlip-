@@ -1,0 +1,918 @@
+{
+  "abi": [
+    { "type": "constructor", "inputs": [], "stateMutability": "nonpayable" },
+    {
+      "type": "function",
+      "name": "MAX_POOLS_PER_STAKER",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MINIMUM_STAKE",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "addSupportedAsset",
+      "inputs": [
+        { "name": "_category", "type": "uint8", "internalType": "uint8" },
+        { "name": "_categoryName", "type": "string", "internalType": "string" },
+        { "name": "_symbol", "type": "string", "internalType": "string" },
+        { "name": "_feedId", "type": "bytes21", "internalType": "bytes21" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "assetToFeedId",
+      "inputs": [{ "name": "", "type": "string", "internalType": "string" }],
+      "outputs": [{ "name": "", "type": "bytes21", "internalType": "bytes21" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "categorizedAssets",
+      "inputs": [
+        { "name": "", "type": "uint8", "internalType": "uint8" },
+        { "name": "", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [{ "name": "", "type": "string", "internalType": "string" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "categoryNameToFeedId",
+      "inputs": [
+        { "name": "", "type": "string", "internalType": "string" },
+        { "name": "", "type": "string", "internalType": "string" }
+      ],
+      "outputs": [{ "name": "", "type": "bytes21", "internalType": "bytes21" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "categoryNames",
+      "inputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+      "outputs": [{ "name": "", "type": "string", "internalType": "string" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "claimPrize",
+      "inputs": [
+        { "name": "_poolId", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createPool",
+      "inputs": [
+        { "name": "_entryFee", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "_maxParticipants",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "_assetSymbol", "type": "string", "internalType": "string" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "creatorFeePercentage",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "feeCalculator",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IFeeCalculator"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "feedCategories",
+      "inputs": [{ "name": "", "type": "bytes21", "internalType": "bytes21" }],
+      "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "feedFees",
+      "inputs": [{ "name": "", "type": "bytes21", "internalType": "bytes21" }],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "ftsoV2",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract FtsoV2Interface"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getRoundResults",
+      "inputs": [
+        { "name": "_poolId", "type": "uint256", "internalType": "uint256" },
+        { "name": "_round", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [
+        { "name": "winners", "type": "address[]", "internalType": "address[]" },
+        { "name": "losers", "type": "address[]", "internalType": "address[]" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isAssetSupported",
+      "inputs": [{ "name": "", "type": "string", "internalType": "string" }],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isCategoryRegistered",
+      "inputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+      "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "joinPool",
+      "inputs": [
+        { "name": "_poolId", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "makeSelection",
+      "inputs": [
+        { "name": "_poolId", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "_choice",
+          "type": "uint8",
+          "internalType": "enum PlayerChoice"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "minimumStakingPeriod",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolCount",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolMarketData",
+      "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "outputs": [
+        { "name": "startPrice", "type": "uint256", "internalType": "uint256" },
+        { "name": "lastPrice", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "startTimestamp",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "lastUpdated", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "priceDecimals",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolTradingPairs",
+      "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "outputs": [
+        { "name": "baseAsset", "type": "string", "internalType": "string" },
+        { "name": "quoteAsset", "type": "string", "internalType": "string" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pools",
+      "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "outputs": [
+        { "name": "assetSymbol", "type": "string", "internalType": "string" },
+        { "name": "feedId", "type": "bytes21", "internalType": "bytes21" },
+        { "name": "entryFee", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "maxParticipants",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "currentParticipants",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "prizePool", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "status",
+          "type": "uint8",
+          "internalType": "enum PoolStatus"
+        },
+        { "name": "creator", "type": "address", "internalType": "address" },
+        {
+          "name": "currentRound",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "maxWinners", "type": "uint256", "internalType": "uint256" },
+        {
+          "name": "currentActiveParticipants",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        { "name": "prizeClaimed", "type": "bool", "internalType": "bool" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "randomNumberV2",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract RandomNumberV2Interface"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "roundRandomNumbers",
+      "inputs": [
+        { "name": "", "type": "uint256", "internalType": "uint256" },
+        { "name": "", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setCreatorFeePercentage",
+      "inputs": [
+        { "name": "_percentage", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setFeeCalculator",
+      "inputs": [
+        {
+          "name": "_feeCalculator",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setFtsoV2",
+      "inputs": [
+        { "name": "_ftsoV2", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setMinimumStakingPeriod",
+      "inputs": [
+        { "name": "_period", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setRandomNumberProvider",
+      "inputs": [
+        {
+          "name": "_randomNumberV2",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "stake",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "stakers",
+      "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
+      "outputs": [
+        {
+          "name": "stakedAmount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "activePoolsCount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalRewards",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "lastStakeTimestamp",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "supportedAssets",
+      "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "outputs": [{ "name": "", "type": "string", "internalType": "string" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "supportedCategories",
+      "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "outputs": [{ "name": "", "type": "uint8", "internalType": "uint8" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        { "name": "newOwner", "type": "address", "internalType": "address" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unstake",
+      "inputs": [
+        { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "updateMarketPrice",
+      "inputs": [
+        { "name": "_poolId", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "userPools",
+      "inputs": [
+        { "name": "", "type": "address", "internalType": "address" },
+        { "name": "", "type": "uint256", "internalType": "uint256" }
+      ],
+      "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "AssetAdded",
+      "inputs": [
+        {
+          "name": "categoryId",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "categoryName",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "symbol",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "feedId",
+          "type": "bytes21",
+          "indexed": false,
+          "internalType": "bytes21"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "AssetRemoved",
+      "inputs": [
+        {
+          "name": "symbol",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "categoryId",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CategoryAdded",
+      "inputs": [
+        {
+          "name": "categoryId",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "categoryName",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CreatorFeePercentageUpdated",
+      "inputs": [
+        {
+          "name": "newPercentage",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CreatorRewardPaid",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "creator",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MarketPriceUpdated",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "price",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "timestamp",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PlayerJoined",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "player",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PoolActivated",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PoolCompleted",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "prizePool",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PoolCreated",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "entryFee",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "maxParticipants",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "assetSymbol",
+          "type": "string",
+          "indexed": false,
+          "internalType": "string"
+        },
+        {
+          "name": "creator",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PrizeClaimed",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winner",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundCompleted",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "round",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winningChoice",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "enum PlayerChoice"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundLosers",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "round",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "losers",
+          "type": "address[]",
+          "indexed": false,
+          "internalType": "address[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RoundWinners",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "round",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winners",
+          "type": "address[]",
+          "indexed": false,
+          "internalType": "address[]"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Staked",
+      "inputs": [
+        {
+          "name": "staker",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TieBrokenByHybrid",
+      "inputs": [
+        {
+          "name": "poolId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "round",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "startPrice",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "lastPrice",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "randomValue",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "winningSelection",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "enum PlayerChoice"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Unstaked",
+      "inputs": [
+        {
+          "name": "staker",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    { "type": "error", "name": "ActivePoolsExist", "inputs": [] },
+    { "type": "error", "name": "AlreadyClaimed", "inputs": [] },
+    { "type": "error", "name": "AlreadyJoined", "inputs": [] },
+    { "type": "error", "name": "AlreadyParticipated", "inputs": [] },
+    { "type": "error", "name": "AssetAlreadySupported", "inputs": [] },
+    { "type": "error", "name": "AssetNotFound", "inputs": [] },
+    { "type": "error", "name": "AssetNotSupported", "inputs": [] },
+    { "type": "error", "name": "CannotResolveZeroVoteTie", "inputs": [] },
+    { "type": "error", "name": "CategoryNameEmpty", "inputs": [] },
+    { "type": "error", "name": "CreatorCannotJoin", "inputs": [] },
+    { "type": "error", "name": "CreatorFeeTransferFailed", "inputs": [] },
+    { "type": "error", "name": "EntryFeeTooLow", "inputs": [] },
+    { "type": "error", "name": "InsufficientFee", "inputs": [] },
+    { "type": "error", "name": "InsufficientParticipants", "inputs": [] },
+    { "type": "error", "name": "InsufficientStake", "inputs": [] },
+    { "type": "error", "name": "InvalidAddress", "inputs": [] },
+    { "type": "error", "name": "InvalidChoice", "inputs": [] },
+    { "type": "error", "name": "InvalidFeePercentage", "inputs": [] },
+    { "type": "error", "name": "InvalidFeedId", "inputs": [] },
+    { "type": "error", "name": "MaxPoolsPerStakerReached", "inputs": [] },
+    { "type": "error", "name": "MinimumStakingPeriodNotMet", "inputs": [] },
+    { "type": "error", "name": "NoSelectionsInRound", "inputs": [] },
+    { "type": "error", "name": "NotAPlayer", "inputs": [] },
+    { "type": "error", "name": "NotAWinner", "inputs": [] },
+    { "type": "error", "name": "NotAuthorized", "inputs": [] },
+    { "type": "error", "name": "NotStakerOrInsufficientStake", "inputs": [] },
+    {
+      "type": "error",
+      "name": "OwnableInvalidOwner",
+      "inputs": [
+        { "name": "owner", "type": "address", "internalType": "address" }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "OwnableUnauthorizedAccount",
+      "inputs": [
+        { "name": "account", "type": "address", "internalType": "address" }
+      ]
+    },
+    { "type": "error", "name": "PlayerEliminated", "inputs": [] },
+    { "type": "error", "name": "PoolDoesNotExist", "inputs": [] },
+    { "type": "error", "name": "PoolFull", "inputs": [] },
+    { "type": "error", "name": "PoolInactive", "inputs": [] },
+    { "type": "error", "name": "PoolNotClosed", "inputs": [] },
+    { "type": "error", "name": "PoolNotOpen", "inputs": [] },
+    { "type": "error", "name": "PrizeAlreadyClaimed", "inputs": [] },
+    { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] },
+    { "type": "error", "name": "SymbolEmpty", "inputs": [] },
+    { "type": "error", "name": "TransferFailed", "inputs": [] },
+    { "type": "error", "name": "UpdateCooldownActive", "inputs": [] }
+  ]
+}
