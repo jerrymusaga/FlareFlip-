@@ -188,7 +188,25 @@ export function usePlayerInfo(
 }
 
 // Hook to get supported assets
-export function useSupportedAssets() {
+interface UseSupportedAssetsResult {
+  supportedAssets: string[];
+  isError: boolean;
+  isLoading: boolean;
+}
+
+interface UseSupportedAssetsParams {
+  index: number | bigint;
+}
+
+interface UseSupportedAssetsResult {
+  supportedAssets: string[];
+  isError: boolean;
+  isLoading: boolean;
+}
+
+export function useSupportedAssets({
+  index,
+}: UseSupportedAssetsParams): UseSupportedAssetsResult {
   const {
     data: supportedAssets,
     isError,
@@ -197,6 +215,7 @@ export function useSupportedAssets() {
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
     functionName: "supportedAssets",
+    args: [index],
   });
 
   return {
@@ -265,8 +284,12 @@ export function useStakerInfo(address?: `0x${string}`) {
 export function useStake() {
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const [stakeAmount, setStakeAmount] = useState<string>("");
+  const [totalStaked, setTotalStaked] = useState<string>("0");
 
+  // Function to handle the staking
   const stake = (amount: string) => {
+    setStakeAmount(amount);
     writeContract({
       address: CONTRACT_ADDRESS,
       abi: flareFlipABI.abi,
@@ -275,7 +298,30 @@ export function useStake() {
     });
   };
 
-  return { stake, hash, isPending, isLoading, isSuccess };
+  // Track successful stakes
+  useEffect(() => {
+    if (isSuccess && stakeAmount) {
+      // Add the new stake to the total
+      setTotalStaked((prev) => {
+        const currentTotal = parseFloat(prev) || 0;
+        const newAmount = parseFloat(stakeAmount) || 0;
+        return (currentTotal + newAmount).toString();
+      });
+
+      // Reset the current stake amount
+      setStakeAmount("");
+    }
+  }, [isSuccess, stakeAmount]);
+
+  return {
+    stake,
+    hash,
+    isPending,
+    isLoading,
+    isSuccess,
+    currentStakeAmount: stakeAmount,
+    totalStaked,
+  };
 }
 
 // Hook to unstake

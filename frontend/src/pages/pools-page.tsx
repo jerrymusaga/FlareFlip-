@@ -1,23 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Trophy, Users, Coins, Clock, Zap, ArrowRight, Flame } from 'lucide-react';
-
+import { useState, useEffect } from "react";
+import {
+  Trophy,
+  Users,
+  Coins,
+  Clock,
+  Zap,
+  ArrowRight,
+  Flame,
+  Plus,
+  Wallet,
+  Lock,
+  Unlock,
+  Settings,
+  AlertTriangle,
+} from "lucide-react";
+import { useAccount, useReadContract, useBalance } from "wagmi";
+import { Pool } from "../types/generated";
+import { StakerInfo } from "../types/generated";
+import { useStake, useSupportedAssets } from "../hooks/FlareFlipHooks";
 // Types
-interface Pool {
-  id: string;
-  asset: string;
-  icon: string;
-  entryFee: number;
-  feeToken: string;
-  maxPlayers: number;
-  currentPlayers: number;
-  status: 'open' | 'filling' | 'active' | 'completed';
-  timeRemaining?: number;
-  potentialReward: number;
-  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
-  popularity: number; // 1-10 scale
-}
 
 export default function GamingPoolsSection() {
+  const { address, isConnected } = useAccount();
+  const { stake, isPending, isLoading, isSuccess, totalStaked } = useStake();
+
+  // const { supportedAssets } = useSupportedAssets(0);
+
+  // console.log("Supported Assets:", supportedAssets);
+  const [inputAmount, setInputAmount] = useState("");
+
   // Mock data with more variety for demonstration
   const [pools, setPools] = useState<Pool[]>([
     {
@@ -28,10 +39,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 64,
       currentPlayers: 28,
-      status: 'open',
+      status: "open",
       potentialReward: 640,
-      difficulty: 'medium',
-      popularity: 8
+      difficulty: "medium",
+      popularity: 8,
+      creator: "0x71C...F39A",
     },
     {
       id: "btc-royale",
@@ -41,11 +53,12 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 32,
       currentPlayers: 32,
-      status: 'active',
+      status: "active",
       timeRemaining: 120,
       potentialReward: 800,
-      difficulty: 'hard',
-      popularity: 9
+      difficulty: "hard",
+      popularity: 9,
+      creator: "0x82D...A42B",
     },
     {
       id: "sol-sprint",
@@ -55,10 +68,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 128,
       currentPlayers: 42,
-      status: 'open',
+      status: "open",
       potentialReward: 640,
-      difficulty: 'easy',
-      popularity: 7
+      difficulty: "easy",
+      popularity: 7,
+      creator: "0x71C...F39A",
     },
     {
       id: "flare-fusion",
@@ -68,10 +82,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 16,
       currentPlayers: 16,
-      status: 'completed',
+      status: "completed",
       potentialReward: 800,
-      difficulty: 'expert',
-      popularity: 6
+      difficulty: "expert",
+      popularity: 6,
+      creator: "0x45B...C78D",
     },
     {
       id: "avax-arena",
@@ -81,10 +96,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 48,
       currentPlayers: 12,
-      status: 'open',
+      status: "open",
       potentialReward: 720,
-      difficulty: 'medium',
-      popularity: 5
+      difficulty: "medium",
+      popularity: 5,
+      creator: "0x91A...D25E",
     },
     {
       id: "dot-duel",
@@ -94,10 +110,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 64,
       currentPlayers: 58,
-      status: 'filling',
+      status: "filling",
       potentialReward: 512,
-      difficulty: 'medium',
-      popularity: 7
+      difficulty: "medium",
+      popularity: 7,
+      creator: "0x82D...A42B",
     },
     {
       id: "ada-arena",
@@ -107,10 +124,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 32,
       currentPlayers: 14,
-      status: 'open',
+      status: "open",
       potentialReward: 384,
-      difficulty: 'easy',
-      popularity: 6
+      difficulty: "easy",
+      popularity: 6,
+      creator: "0x71C...F39A",
     },
     {
       id: "matic-mayhem",
@@ -120,10 +138,11 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 100,
       currentPlayers: 87,
-      status: 'filling',
+      status: "filling",
       potentialReward: 600,
-      difficulty: 'hard',
-      popularity: 8
+      difficulty: "hard",
+      popularity: 8,
+      creator: "0x45B...C78D",
     },
     {
       id: "bnb-battle",
@@ -133,11 +152,12 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 48,
       currentPlayers: 48,
-      status: 'active',
+      status: "active",
       timeRemaining: 300,
       potentialReward: 864,
-      difficulty: 'hard',
-      popularity: 9
+      difficulty: "hard",
+      popularity: 9,
+      creator: "0x91A...D25E",
     },
     {
       id: "xrp-xtreme",
@@ -147,26 +167,58 @@ export default function GamingPoolsSection() {
       feeToken: "FLR",
       maxPlayers: 24,
       currentPlayers: 3,
-      status: 'open',
+      status: "open",
       potentialReward: 480,
-      difficulty: 'medium',
-      popularity: 4
-    }
+      difficulty: "medium",
+      popularity: 4,
+      creator: "0x71C...F39A",
+    },
   ]);
-  
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('popularity');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Mock user data
+  const [userAddress, setUserAddress] = useState<string>("0x71C...F39A"); // Mock user address
+  const [userBalance, setUserBalance] = useState<number>(1250); // Mock user balance
+  const [walletConnected, setWalletConnected] = useState<boolean>(false);
+  const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
+    stakedAmount: 500,
+    lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000, // 7 days ago
+    activePoolsCount: 2,
+    earnings: 45,
+  });
+
+  // UI state
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("popularity");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [visiblePools, setVisiblePools] = useState<number>(6);
   const [animatingPoolId, setAnimatingPoolId] = useState<string | null>(null);
-  
+  const [showStakingModal, setShowStakingModal] = useState<boolean>(false);
+  const [showCreatePoolModal, setShowCreatePoolModal] =
+    useState<boolean>(false);
+  const [stakeAmount, setStakeAmount] = useState<string>("");
+  const [unstakeAmount, setUnstakeAmount] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"stake" | "unstake">("stake");
+
+  // New pool form state
+  const [newPool, setNewPool] = useState({
+    asset: "Ethereum",
+    entryFee: 10,
+    maxPlayers: 64,
+    difficulty: "medium" as "easy" | "medium" | "hard" | "expert",
+  });
+
+  const { data: balanceData, isError } = useBalance({
+    address: address,
+    chainId: 114,
+  });
+
   // Simulate loading more pools
   const loadMorePools = () => {
     if (visiblePools < filteredPools.length) {
-      setVisiblePools(prev => Math.min(prev + 6, filteredPools.length));
+      setVisiblePools((prev) => Math.min(prev + 6, filteredPools.length));
     }
   };
-  
+
   // Add animation effect when joining a pool
   const joinPool = (poolId: string) => {
     setAnimatingPoolId(poolId);
@@ -175,62 +227,197 @@ export default function GamingPoolsSection() {
       alert(`Connecting wallet to join ${poolId}`);
     }, 800);
   };
-  
+
+  // Handle staking
+  const handleStake = () => {
+    if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
+      alert("Please enter a valid amount to stake");
+      return;
+    }
+
+    const amount = parseFloat(stakeAmount);
+    if (!inputAmount || parseFloat(inputAmount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+    stake(inputAmount);
+    setInputAmount("");
+    alert(`Successfully staked ${amount} FLR`);
+  };
+
+  // Handle unstaking
+  const handleUnstake = () => {
+    if (!unstakeAmount || parseFloat(unstakeAmount) <= 0) {
+      alert("Please enter a valid amount to unstake");
+      return;
+    }
+
+    const amount = parseFloat(unstakeAmount);
+    if (amount > stakerInfo.stakedAmount) {
+      alert("Insufficient staked amount");
+      return;
+    }
+
+    // Check minimum staking period (7 days for demo purposes)
+    const minimumStakingPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    if (Date.now() < stakerInfo.lastStakeTimestamp + minimumStakingPeriod) {
+      alert("Minimum staking period not met (7 days)");
+      return;
+    }
+
+    // Check active pools
+    if (stakerInfo.activePoolsCount > 0) {
+      alert("Cannot unstake while you have active pools");
+      return;
+    }
+
+    // Mock unstaking
+    setStakerInfo({
+      ...stakerInfo,
+      stakedAmount: stakerInfo.stakedAmount - amount,
+    });
+    setUserBalance(userBalance + amount);
+    setUnstakeAmount("");
+    alert(`Successfully unstaked ${amount} FLR`);
+  };
+
+  // Handle pool creation
+  const handleCreatePool = () => {
+    // Validate inputs
+    if (newPool.entryFee <= 0 || newPool.maxPlayers <= 1) {
+      alert("Please provide valid pool parameters");
+      return;
+    }
+
+    // Check if user has staked enough (minimum 100 FLR for demo)
+    const MINIMUM_STAKE = 100;
+    if (stakerInfo.stakedAmount < MINIMUM_STAKE) {
+      alert(`You need to stake at least ${MINIMUM_STAKE} FLR to create a pool`);
+      return;
+    }
+
+    // Create new pool
+    const newPoolId = `${newPool.asset.toLowerCase()}-${Math.floor(
+      Math.random() * 10000
+    )}`;
+    const createdPool: Pool = {
+      id: newPoolId,
+      asset: newPool.asset,
+      icon: `/${newPool.asset.toLowerCase()}.svg`,
+      entryFee: newPool.entryFee,
+      feeToken: "FLR",
+      maxPlayers: newPool.maxPlayers,
+      currentPlayers: 0,
+      status: "open",
+      potentialReward: newPool.entryFee * newPool.maxPlayers,
+      difficulty: newPool.difficulty,
+      popularity: 5, // Default popularity
+      creator: userAddress,
+    };
+
+    setPools([createdPool, ...pools]);
+    setStakerInfo({
+      ...stakerInfo,
+      activePoolsCount: stakerInfo.activePoolsCount + 1,
+    });
+    setShowCreatePoolModal(false);
+    alert(`Successfully created ${newPool.asset} pool!`);
+  };
+
   // Filter, sort and search pools
   const filteredPools = pools
-    .filter(pool => {
+    .filter((pool) => {
       // Filter by status
-      const statusMatch = activeFilter === 'all' || pool.status === activeFilter;
-      
+      const statusMatch =
+        activeFilter === "all" || pool.status === activeFilter;
+
       // Filter by search
-      const searchMatch = !searchQuery || 
+      const searchMatch =
+        !searchQuery ||
         pool.asset.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pool.id.toLowerCase().includes(searchQuery.toLowerCase());
-        
+
       return statusMatch && searchMatch;
     })
     .sort((a, b) => {
-      switch(sortBy) {
-        case 'popularity':
+      switch (sortBy) {
+        case "popularity":
           return b.popularity - a.popularity;
-        case 'reward':
+        case "reward":
           return b.potentialReward - a.potentialReward;
-        case 'fee':
+        case "fee":
           return a.entryFee - b.entryFee;
-        case 'filling':
-          return (b.currentPlayers / b.maxPlayers) - (a.currentPlayers / a.maxPlayers);
+        case "filling":
+          return (
+            b.currentPlayers / b.maxPlayers - a.currentPlayers / a.maxPlayers
+          );
         default:
           return 0;
       }
     });
-  
+
   // Format time remaining in minutes and seconds
   const formatTimeRemaining = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+    return `${mins}:${secs < 10 ? "0" + secs : secs}`;
   };
-  
+
   // Get difficulty color
   const getDifficultyColor = (difficulty: string) => {
-    switch(difficulty) {
-      case 'easy': return 'text-green-500';
-      case 'medium': return 'text-yellow-500';
-      case 'hard': return 'text-orange-500';
-      case 'expert': return 'text-red-500';
-      default: return 'text-gray-500';
+    switch (difficulty) {
+      case "easy":
+        return "text-green-500";
+      case "medium":
+        return "text-yellow-500";
+      case "hard":
+        return "text-orange-500";
+      case "expert":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
     }
   };
-  
+
+  // Format timestamp to date
+  const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString();
+  };
+
+  // Calculate time remaining for unlock
+  const getUnlockTimeRemaining = () => {
+    const minimumStakingPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+    const unlockTime = stakerInfo.lastStakeTimestamp + minimumStakingPeriod;
+    const remainingMs = unlockTime - Date.now();
+
+    if (remainingMs <= 0) return "Unlocked";
+
+    const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+    const hours = Math.floor(
+      (remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
+    );
+
+    return `${days}d ${hours}h remaining`;
+  };
+
+  // Check if unstaking is allowed
+  const canUnstake = () => {
+    const minimumStakingPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+    return (
+      Date.now() >= stakerInfo.lastStakeTimestamp + minimumStakingPeriod &&
+      stakerInfo.activePoolsCount === 0
+    );
+  };
+
   // Simulate time decreasing for active pools
   useEffect(() => {
     const timer = setInterval(() => {
-      setPools(prevPools => 
-        prevPools.map(pool => {
-          if (pool.status === 'active' && pool.timeRemaining) {
+      setPools((prevPools) =>
+        prevPools.map((pool) => {
+          if (pool.status === "active" && pool.timeRemaining) {
             const newTime = pool.timeRemaining - 1;
             if (newTime <= 0) {
-              return { ...pool, status: 'completed', timeRemaining: undefined };
+              return { ...pool, status: "completed", timeRemaining: undefined };
             }
             return { ...pool, timeRemaining: newTime };
           }
@@ -238,421 +425,691 @@ export default function GamingPoolsSection() {
         })
       );
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, []);
-  
+
   // Get appropriate button info based on pool status
   const getButtonInfo = (pool: Pool) => {
     switch (pool.status) {
-      case 'open':
-        return { 
-          text: 'Join Pool', 
+      case "open":
+        return {
+          text: "Join Pool",
           disabled: false,
           action: () => joinPool(pool.id),
-          className: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white'
+          className:
+            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
         };
-      case 'filling':
-        return { 
-          text: 'Almost Full!', 
+      case "filling":
+        return {
+          text: "Almost Full!",
           disabled: false,
           action: () => joinPool(pool.id),
-          className: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+          className:
+            "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white",
         };
-      case 'active':
-        return { 
-          text: 'In Progress', 
+      case "active":
+        return {
+          text: "In Progress",
           disabled: true,
           action: () => {},
-          className: 'bg-blue-100 text-blue-600 cursor-not-allowed'
+          className: "bg-blue-100 text-blue-600 cursor-not-allowed",
         };
-      case 'completed':
-        return { 
-          text: 'Completed', 
+      case "completed":
+        return {
+          text: "Completed",
           disabled: true,
           action: () => {},
-          className: 'bg-gray-100 text-gray-500 cursor-not-allowed'
+          className: "bg-gray-100 text-gray-500 cursor-not-allowed",
         };
       default:
-        return { 
-          text: 'Join Pool', 
+        return {
+          text: "Join Pool",
           disabled: false,
           action: () => joinPool(pool.id),
-          className: 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white'
+          className:
+            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
         };
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-indigo-900 text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with animated background */}
-        <div className="relative overflow-hidden rounded-2xl mb-8 bg-black bg-opacity-30 p-8 border border-indigo-500/30">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10"></div>
-          <div className="absolute -inset-1 bg-grid-white/5 [mask-image:linear-gradient(white,transparent)]"></div>
-          
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
-                Minority Wins Game Pools
-              </h1>
-              <p className="mt-2 text-indigo-200">
-                Choose the minority option to advance. Last players standing win it all!
+  // StakingModal Component
+  const StakingModal = () => {
+    if (!showStakingModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-2xl p-6 max-w-md w-full border border-indigo-700/30 shadow-xl">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Stake & Earn</h2>
+            <button
+              onClick={() => setShowStakingModal(false)}
+              className="text-indigo-300 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Staking Info Summary */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-indigo-800/30 rounded-xl p-4 border border-indigo-700/30">
+              <p className="text-xs text-indigo-300 mb-1">Total Staked</p>
+              <p className="text-2xl font-bold text-white">
+                {stakerInfo.stakedAmount} FLR
               </p>
             </div>
-            
-            <div className="flex space-x-4">
-              <div className="bg-indigo-900/50 backdrop-blur-sm p-3 rounded-xl flex items-center border border-indigo-700/30">
-                <Zap className="text-yellow-400 mr-2" size={20} />
-                <div>
-                  <p className="text-xs text-indigo-300">Total Prize Pool</p>
-                  <p className="font-bold text-yellow-400">
-                    {pools.reduce((sum, pool) => sum + pool.potentialReward, 0)} FLR
+            <div className="bg-indigo-800/30 rounded-xl p-4 border border-indigo-700/30">
+              <p className="text-xs text-indigo-300 mb-1">Earnings</p>
+              <p className="text-2xl font-bold text-green-400">
+                +{stakerInfo.earnings} FLR
+              </p>
+            </div>
+          </div>
+
+          {/* Lock Status */}
+          <div className="bg-indigo-800/20 rounded-xl p-4 border border-indigo-700/30 mb-6">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                {canUnstake() ? (
+                  <Unlock size={18} className="text-green-400" />
+                ) : (
+                  <Lock size={18} className="text-amber-400" />
+                )}
+                <p className="text-sm font-medium text-white">Lock Status</p>
+              </div>
+              <span
+                className={`text-sm ${
+                  canUnstake() ? "text-green-400" : "text-amber-400"
+                }`}
+              >
+                {getUnlockTimeRemaining()}
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-indigo-300">
+              <p>
+                Last staked: {formatTimestamp(stakerInfo.lastStakeTimestamp)}
+              </p>
+              <p>Active pools: {stakerInfo.activePoolsCount}</p>
+              {!canUnstake() && stakerInfo.activePoolsCount > 0 && (
+                <p className="text-amber-400 mt-1">
+                  <AlertTriangle size={12} className="inline mr-1" />
+                  Cannot unstake while pools are active
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Tabs for Stake/Unstake */}
+          <div className="flex rounded-lg overflow-hidden border border-indigo-700/30 mb-6">
+            <button
+              onClick={() => setActiveTab("stake")}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "stake"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50"
+              }`}
+            >
+              Stake
+            </button>
+            <button
+              onClick={() => setActiveTab("unstake")}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === "unstake"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50"
+              }`}
+            >
+              Unstake
+            </button>
+          </div>
+
+          {/* Stake Form */}
+          {activeTab === "stake" && (
+            <div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-indigo-300 mb-1">
+                  Amount to Stake
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="0.0"
+                    value={stakeAmount}
+                    onChange={(e) => setStakeAmount(e.target.value)}
+                    className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
+                    FLR
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-400 mt-1">
+                  Balance: {userBalance} FLR
+                </p>
+              </div>
+
+              <div className="mb-4 text-xs text-indigo-300">
+                <p className="mb-1">• Minimum staking period: 7 days</p>
+                <p className="mb-1">• Cannot unstake while pools are active</p>
+                <p>• Earn 2% from pool entry fees as creator rewards</p>
+              </div>
+
+              <button
+                onClick={handleStake}
+                className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200"
+              >
+                Stake FLR
+              </button>
+            </div>
+          )}
+
+          {/* Unstake Form */}
+          {activeTab === "unstake" && (
+            <div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-indigo-300 mb-1">
+                  Amount to Unstake
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="0.0"
+                    value={unstakeAmount}
+                    onChange={(e) => setUnstakeAmount(e.target.value)}
+                    className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    disabled={!canUnstake()}
+                  />
+                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
+                    FLR
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-400 mt-1">
+                  Staked: {stakerInfo.stakedAmount} FLR
+                </p>
+              </div>
+
+              {!canUnstake() && (
+                <div className="mb-4 p-2 bg-amber-400/10 border border-amber-400/20 rounded-lg">
+                  <p className="text-xs text-amber-400 flex items-center">
+                    <AlertTriangle size={12} className="mr-1" />
+                    {stakerInfo.activePoolsCount > 0
+                      ? "You have active pools. Close them before unstaking."
+                      : "Minimum staking period not met yet."}
                   </p>
                 </div>
+              )}
+
+              <button
+                onClick={handleUnstake}
+                disabled={!canUnstake()}
+                className={`w-full py-3 px-4 font-medium rounded-lg transition-all duration-200 ${
+                  canUnstake()
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                    : "bg-indigo-900/50 text-indigo-400 cursor-not-allowed"
+                }`}
+              >
+                Unstake FLR
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Create Pool Modal Component
+  const CreatePoolModal = () => {
+    if (!showCreatePoolModal) return null;
+
+    const assetOptions = [
+      "Ethereum",
+      "Bitcoin",
+      "Solana",
+      "Flare",
+      "Avalanche",
+      "Polkadot",
+      "Cardano",
+      "Polygon",
+      "Binance",
+      "XRP",
+    ];
+
+    return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-2xl p-6 max-w-md w-full border border-indigo-700/30 shadow-xl">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Create New Pool</h2>
+            <button
+              onClick={() => setShowCreatePoolModal(false)}
+              className="text-indigo-300 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Pool Creation Form */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-1">
+                Select Asset
+              </label>
+              <select
+                value={newPool.asset}
+                onChange={(e) =>
+                  setNewPool({ ...newPool, asset: e.target.value })
+                }
+                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                {assetOptions.map((asset) => (
+                  <option key={asset} value={asset}>
+                    {asset}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-1">
+                Entry Fee (FLR)
+              </label>
+              <input
+                type="number"
+                value={newPool.entryFee}
+                onChange={(e) =>
+                  setNewPool({ ...newPool, entryFee: Number(e.target.value) })
+                }
+                min="1"
+                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-1">
+                Maximum Players
+              </label>
+              <input
+                type="number"
+                value={newPool.maxPlayers}
+                onChange={(e) =>
+                  setNewPool({ ...newPool, maxPlayers: Number(e.target.value) })
+                }
+                min="2"
+                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-1">
+                Difficulty
+              </label>
+              <select
+                value={newPool.difficulty}
+                onChange={(e) =>
+                  setNewPool({ ...newPool, difficulty: e.target.value as any })
+                }
+                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+                <option value="expert">Expert</option>
+              </select>
+            </div>
+
+            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-700/30">
+              <h4 className="text-sm font-medium text-purple-300 mb-2">
+                Pool Summary
+              </h4>
+              <p className="text-xs text-indigo-300">
+                Total Pool Size: {newPool.entryFee * newPool.maxPlayers} FLR
+              </p>
+              <p className="text-xs text-indigo-300">
+                Creator Fee:{" "}
+                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.02)} FLR
+                (2%)
+              </p>
+              <p className="text-xs text-indigo-300">
+                Platform Fee:{" "}
+                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.01)} FLR
+                (1%)
+              </p>
+              <p className="text-xs text-green-400 font-medium mt-1">
+                Player Payout:{" "}
+                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.97)} FLR
+              </p>
+            </div>
+
+            {stakerInfo.stakedAmount < 100 && (
+              <div className="mt-2 p-2 bg-amber-400/10 border border-amber-400/20 rounded-lg">
+                <p className="text-xs text-amber-400 flex items-center">
+                  <AlertTriangle size={12} className="mr-1" />
+                  You need at least 100 FLR staked to create a pool
+                </p>
               </div>
-              
-              <div className="bg-indigo-900/50 backdrop-blur-sm p-3 rounded-xl flex items-center border border-indigo-700/30">
-                <Users className="text-green-400 mr-2" size={20} />
-                <div>
-                  <p className="text-xs text-indigo-300">Active Players</p>
-                  <p className="font-bold text-green-400">
-                    {pools.reduce((sum, pool) => sum + pool.currentPlayers, 0)}
-                  </p>
+            )}
+
+            <button
+              onClick={handleCreatePool}
+              disabled={stakerInfo.stakedAmount < 100}
+              className={`w-full py-3 px-4 font-medium rounded-lg transition-all duration-200 mt-4 ${
+                stakerInfo.stakedAmount >= 100
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                  : "bg-indigo-900/50 text-indigo-400 cursor-not-allowed"
+              }`}
+            >
+              Create Pool
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-950 to-indigo-950">
+      {/* Header & Controls */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Gaming Pools</h1>
+            <p className="text-indigo-300">
+              Earn rewards by predicting price movements in competitive pools
+            </p>
+          </div>
+
+          {/* Wallet Status */}
+          <div className="mt-4 md:mt-0">
+            <div className="flex items-center gap-4">
+              <div className="bg-indigo-900/30 rounded-xl px-4 py-2 border border-indigo-600/30">
+                <span className="text-xs text-indigo-400">Balance</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <Coins size={14} className="text-amber-400" />
+                  <span className="font-medium text-white">
+                    {balanceData?.formatted || "0.00"} FLR
+                  </span>
                 </div>
               </div>
+
+              <button
+                onClick={() => setShowStakingModal(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 px-4 rounded-lg transition-all duration-200"
+              >
+                <Flame size={18} />
+                <span>
+                  Stake{" "}
+                  {stakerInfo.stakedAmount > 0
+                    ? `(${stakerInfo.stakedAmount})`
+                    : ""}
+                </span>
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Filters and controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search pools..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-indigo-900/30 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-          
-          <div className="flex rounded-lg overflow-hidden border border-indigo-600/30">
-            <button 
-              onClick={() => setActiveFilter('all')} 
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${activeFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50'}`}
+
+        {/* Filter & Search Controls */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="flex flex-1 gap-2 overflow-x-auto pb-2 md:pb-0">
+            <button
+              onClick={() => setActiveFilter("all")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeFilter === "all"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
+              }`}
             >
               All Pools
             </button>
-            <button 
-              onClick={() => setActiveFilter('open')} 
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${activeFilter === 'open' ? 'bg-green-600 text-white' : 'bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50'}`}
+            <button
+              onClick={() => setActiveFilter("open")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeFilter === "open"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
+              }`}
             >
               Open
             </button>
-            <button 
-              onClick={() => setActiveFilter('active')} 
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${activeFilter === 'active' ? 'bg-blue-600 text-white' : 'bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50'}`}
+            <button
+              onClick={() => setActiveFilter("filling")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeFilter === "filling"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
+              }`}
+            >
+              Filling Fast
+            </button>
+            <button
+              onClick={() => setActiveFilter("active")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeFilter === "active"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
+              }`}
             >
               Active
             </button>
+            <button
+              onClick={() => setActiveFilter("completed")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeFilter === "completed"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
+              }`}
+            >
+              Completed
+            </button>
           </div>
-          
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="bg-indigo-900/30 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            <option value="popularity">Sort by: Popularity</option>
-            <option value="reward">Sort by: Highest Reward</option>
-            <option value="fee">Sort by: Lowest Entry Fee</option>
-            <option value="filling">Sort by: Filling Fast</option>
-          </select>
-        </div>
-        
-        {/* Featured Pool (if any) */}
-        {filteredPools.length > 0 && filteredPools[0].popularity >= 8 && (
-          <div className="mb-8 relative overflow-hidden rounded-2xl border border-amber-500/30 group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-amber-900/20"></div>
-            <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-500 to-amber-600 text-black font-bold py-1 px-4 rounded-bl-lg">
-              FEATURED
+
+          <div className="flex gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search pools..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-indigo-900/30 border border-indigo-600/30 rounded-lg py-2 pl-4 pr-10 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full md:w-64"
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
+                🔍
+              </span>
             </div>
-            
-            <div className="relative p-6 md:p-8 bg-black/50 backdrop-blur-sm">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                      {/* Asset icon would go here */}
-                      <span className="text-3xl font-bold text-white">{filteredPools[0].asset.charAt(0)}</span>
-                    </div>
-                    
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">{filteredPools[0].asset} Premium Pool</h2>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          filteredPools[0].status === 'open' ? 'bg-green-900/50 text-green-400' :
-                          filteredPools[0].status === 'filling' ? 'bg-yellow-900/50 text-yellow-400' :
-                          filteredPools[0].status === 'active' ? 'bg-blue-900/50 text-blue-400' :
-                          'bg-gray-800 text-gray-400'
-                        }`}>
-                          {filteredPools[0].status.toUpperCase()}
-                        </span>
-                        
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-black/30 ${getDifficultyColor(filteredPools[0].difficulty)}`}>
-                          {filteredPools[0].difficulty.toUpperCase()}
-                        </span>
-                        
-                        <div className="flex items-center">
-                          <Flame className="text-red-500 h-4 w-4" />
-                          <span className="ml-1 text-xs text-indigo-200">Popular</span>
-                        </div>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-indigo-900/30 border border-indigo-600/30 rounded-lg py-2 px-4 text-indigo-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="popularity">Popular</option>
+              <option value="reward">Highest Reward</option>
+              <option value="fee">Lowest Fee</option>
+              <option value="filling">Filling Fast</option>
+            </select>
+
+            {isConnected && stakerInfo.stakedAmount >= 100 && (
+              <button
+                onClick={() => setShowCreatePoolModal(true)}
+                className="flex items-center gap-1 bg-indigo-900/50 hover:bg-indigo-900/70 text-white py-2 px-3 rounded-lg border border-indigo-600/30 transition-all duration-200"
+              >
+                <Plus size={18} />
+                <span className="hidden md:inline">Create</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Pools Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPools.slice(0, visiblePools).map((pool) => {
+            const buttonInfo = getButtonInfo(pool);
+            return (
+              <div
+                key={pool.id}
+                className={`bg-gradient-to-b from-indigo-900/40 to-indigo-950/40 rounded-2xl border border-indigo-600/20 overflow-hidden transform transition-all duration-300 ${
+                  animatingPoolId === pool.id ? "scale-95 opacity-80" : ""
+                }`}
+              >
+                {/* Pool Header */}
+                <div className="relative p-6 pb-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-indigo-800 flex items-center justify-center">
+                        <img
+                          src={pool.icon}
+                          alt={pool.asset}
+                          className="w-6 h-6"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white text-lg">
+                          {pool.asset}
+                        </h3>
+                        <p className="text-xs text-indigo-400">{pool.id}</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-indigo-900/30 rounded-lg p-3 border border-indigo-700/20">
-                      <p className="text-xs text-indigo-300">Entry Fee</p>
-                      <p className="text-xl font-bold text-white">{filteredPools[0].entryFee} FLR</p>
-                    </div>
-                    
-                    <div className="bg-indigo-900/30 rounded-lg p-3 border border-indigo-700/20">
-                      <p className="text-xs text-indigo-300">Players</p>
-                      <p className="text-xl font-bold text-white">
-                        {filteredPools[0].currentPlayers} / {filteredPools[0].maxPlayers}
-                      </p>
-                    </div>
-                    
-                    <div className="bg-indigo-900/30 rounded-lg p-3 border border-indigo-700/20">
-                      <p className="text-xs text-indigo-300">Reward Pool</p>
-                      <p className="text-xl font-bold text-amber-400">{filteredPools[0].potentialReward} FLR</p>
-                    </div>
-                    
-                    {filteredPools[0].timeRemaining && (
-                      <div className="bg-indigo-900/30 rounded-lg p-3 border border-indigo-700/20">
-                        <p className="text-xs text-indigo-300">Time Left</p>
-                        <p className="text-xl font-bold text-red-400">{formatTimeRemaining(filteredPools[0].timeRemaining)}</p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <div className="w-full sm:w-2/3">
-                      <div className="h-3 w-full bg-indigo-900/50 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${
-                            filteredPools[0].currentPlayers / filteredPools[0].maxPlayers > 0.75 ? 'bg-gradient-to-r from-amber-400 to-red-500' : 'bg-gradient-to-r from-green-400 to-cyan-500'
-                          }`}
-                          style={{ width: `${(filteredPools[0].currentPlayers / filteredPools[0].maxPlayers) * 100}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-indigo-300 mt-1">
-                        {Math.round((filteredPools[0].currentPlayers / filteredPools[0].maxPlayers) * 100)}% Full
-                        {filteredPools[0].currentPlayers / filteredPools[0].maxPlayers > 0.8 && 
-                          <span className="text-amber-400 ml-1">Filling Fast!</span>
-                        }
-                      </p>
-                    </div>
-                    
-                    <button
-                      onClick={getButtonInfo(filteredPools[0]).action}
-                      disabled={getButtonInfo(filteredPools[0]).disabled}
-                      className={`w-full sm:w-1/3 py-3 px-6 rounded-lg font-medium transition-all duration-200 ${getButtonInfo(filteredPools[0]).className} ${
-                        animatingPoolId === filteredPools[0].id ? 'animate-pulse scale-95' : ''
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        pool.status === "open"
+                          ? "bg-green-500/20 text-green-400"
+                          : pool.status === "filling"
+                          ? "bg-amber-500/20 text-amber-400"
+                          : pool.status === "active"
+                          ? "bg-blue-500/20 text-blue-400"
+                          : "bg-gray-500/20 text-gray-400"
                       }`}
                     >
-                      <span className="flex items-center justify-center gap-2">
-                        {getButtonInfo(filteredPools[0]).text}
-                        {!getButtonInfo(filteredPools[0]).disabled && <ArrowRight size={16} />}
+                      {pool.status.charAt(0).toUpperCase() +
+                        pool.status.slice(1)}
+                    </div>
+                  </div>
+
+                  {pool.timeRemaining && (
+                    <div className="absolute top-6 right-6 mt-8 flex items-center gap-1 text-sm text-red-400">
+                      <Clock size={14} />
+                      <span>{formatTimeRemaining(pool.timeRemaining)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pool Info */}
+                <div className="px-6 pb-4">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-indigo-800/20 rounded-xl p-3">
+                      <p className="text-xs text-indigo-400 mb-1">Entry Fee</p>
+                      <div className="flex items-center gap-1">
+                        <Coins size={16} className="text-amber-400" />
+                        <p className="text-lg font-bold text-white">
+                          {pool.entryFee} {pool.feeToken}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-indigo-800/20 rounded-xl p-3">
+                      <p className="text-xs text-indigo-400 mb-1">Reward</p>
+                      <div className="flex items-center gap-1">
+                        <Trophy size={16} className="text-amber-400" />
+                        <p className="text-lg font-bold text-white">
+                          {pool.potentialReward} {pool.feeToken}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Users size={16} className="text-indigo-400" />
+                        <span className="text-sm text-indigo-300">Players</span>
+                      </div>
+                      <span className="text-sm font-medium text-white">
+                        {pool.currentPlayers}/{pool.maxPlayers}
                       </span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="hidden lg:block">
-                  <div className="bg-indigo-900/30 rounded-xl p-4 border border-indigo-700/20 h-full">
-                    <h3 className="font-bold text-lg flex items-center gap-2 mb-4">
-                      <Trophy size={20} className="text-amber-400" /> 
-                      Prize Distribution
-                    </h3>
-                    <ul className="space-y-3">
-                      <li className="flex justify-between items-center">
-                        <span className="text-indigo-300">Winner</span>
-                        <span className="font-bold text-amber-400">{Math.round(filteredPools[0].potentialReward * 0.7)} FLR</span>
-                      </li>
-                      <li className="flex justify-between items-center">
-                        <span className="text-indigo-300">Runner Up</span>
-                        <span className="font-bold text-amber-400">{Math.round(filteredPools[0].potentialReward * 0.3)} FLR</span>
-                      </li>
-                    </ul>
-                    <div className="mt-4 pt-4 border-t border-indigo-700/20">
-                      <h4 className="font-medium text-sm mb-2">Game Rules</h4>
-                      <p className="text-xs text-indigo-300">
-                        Each round, choose between Heads or Tails. If you pick the minority choice, you move on. 
-                        If you're with the majority, you're eliminated! Last players standing win the prize pool.
-                      </p>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Main Pool Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredPools.slice(0, visiblePools).map((pool, index) => {
-            if (index === 0 && pool.popularity >= 8) return null; // Skip the first one if it's featured above
-            
-            const buttonInfo = getButtonInfo(pool);
-            const filledPercentage = (pool.currentPlayers / pool.maxPlayers) * 100;
-            
-            return (
-              <div 
-                key={pool.id}
-                className={`bg-indigo-900/20 backdrop-blur-sm rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-lg ${
-                  pool.status === 'open' ? 'border-green-500/30 hover:border-green-500/50' :
-                  pool.status === 'filling' ? 'border-amber-500/30 hover:border-amber-500/50' :
-                  pool.status === 'active' ? 'border-blue-500/30 hover:border-blue-500/50' :
-                  'border-gray-600/30'
-                } ${animatingPoolId === pool.id ? 'animate-pulse scale-95' : ''}`}
-              >
-                <div className="p-5">
-                  {/* Pool Header */}
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        pool.status === 'open' ? 'bg-gradient-to-br from-green-400 to-emerald-600' :
-                        pool.status === 'filling' ? 'bg-gradient-to-br from-amber-400 to-orange-600' :
-                        pool.status === 'active' ? 'bg-gradient-to-br from-blue-400 to-indigo-600' :
-                        'bg-gradient-to-br from-gray-400 to-gray-600'
-                      }`}>
-                        <span className="text-lg font-bold text-white">{pool.asset.charAt(0)}</span>
+
+                    <div className="w-full bg-indigo-900/50 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
+                        style={{
+                          width: `${
+                            (pool.currentPlayers / pool.maxPlayers) * 100
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <Zap
+                          size={16}
+                          className={getDifficultyColor(pool.difficulty)}
+                        />
+                        <span
+                          className={`text-sm ${getDifficultyColor(
+                            pool.difficulty
+                          )}`}
+                        >
+                          {pool.difficulty.charAt(0).toUpperCase() +
+                            pool.difficulty.slice(1)}
+                        </span>
                       </div>
-                      <h3 className="text-lg font-semibold text-white">{pool.asset}</h3>
-                    </div>
-                    
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      pool.status === 'open' ? 'bg-green-900/50 text-green-400' :
-                      pool.status === 'filling' ? 'bg-yellow-900/50 text-yellow-400' :
-                      pool.status === 'active' ? 'bg-blue-900/50 text-blue-400' :
-                      'bg-gray-800 text-gray-400'
-                    }`}>
-                      {pool.status.toUpperCase()}
-                    </div>
-                  </div>
-                  
-                  {/* Pool Info */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-black/20 rounded-lg p-2">
-                      <div className="flex items-center gap-1 text-xs text-indigo-300 mb-1">
-                        <Coins size={12} />
-                        <span>Entry Fee</span>
-                      </div>
-                      <span className="text-base font-bold text-white">{pool.entryFee} {pool.feeToken}</span>
-                    </div>
-                    
-                    <div className="bg-black/20 rounded-lg p-2">
-                      <div className="flex items-center gap-1 text-xs text-indigo-300 mb-1">
-                        <Users size={12} />
-                        <span>Players</span>
-                      </div>
-                      <span className="text-base font-bold text-white">{pool.currentPlayers} / {pool.maxPlayers}</span>
-                    </div>
-                    
-                    <div className="bg-black/20 rounded-lg p-2">
-                      <div className="flex items-center gap-1 text-xs text-indigo-300 mb-1">
-                        <Trophy size={12} />
-                        <span>Reward</span>
-                      </div>
-                      <span className="text-base font-bold text-amber-400">{pool.potentialReward} {pool.feeToken}</span>
-                    </div>
-                    
-                    <div className="bg-black/20 rounded-lg p-2">
-                      <div className="flex items-center gap-1 text-xs text-indigo-300 mb-1">
-                        <Clock size={12} />
-                        <span>Status</span>
-                      </div>
-                      {pool.status === 'active' && pool.timeRemaining ? (
-                        <span className="text-base font-bold text-red-400">{formatTimeRemaining(pool.timeRemaining)}</span>
-                      ) : (
-                        <span className={`text-base font-bold ${getDifficultyColor(pool.difficulty)}`}>
-                          {pool.difficulty.charAt(0).toUpperCase() + pool.difficulty.slice(1)}
+
+                      {pool.creator && pool.creator === userAddress && (
+                        <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full">
+                          Your Pool
                         </span>
                       )}
                     </div>
                   </div>
-                  
-                  {/* Progress Bar */}
-                  <div className="w-full h-2 bg-black/30 rounded-full mb-4 overflow-hidden">
-                    <div 
-                      className={`h-full ${
-                        pool.status === 'completed' ? 'bg-gray-500' :
-                        pool.status === 'active' ? 'bg-gradient-to-r from-blue-400 to-indigo-600 animate-pulse' : 
-                        filledPercentage > 75 ? 'bg-gradient-to-r from-amber-400 to-red-500' :
-                        'bg-gradient-to-r from-green-400 to-emerald-500'
-                      }`}
-                      style={{ width: `${filledPercentage}%` }}
-                    ></div>
-                  </div>
-                  
-                  {/* Action Button */}
+                </div>
+
+                {/* Action Button */}
+                <div className="px-6 pb-6">
                   <button
                     onClick={buttonInfo.action}
                     disabled={buttonInfo.disabled}
-                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${buttonInfo.className} flex items-center justify-center gap-2`}
+                    className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 ${buttonInfo.className}`}
                   >
                     {buttonInfo.text}
-                    {!buttonInfo.disabled && <ArrowRight size={16} />}
+                    {!buttonInfo.disabled && <ArrowRight size={18} />}
                   </button>
-                </div>
-                
-                {/* Game Rules Summary */}
-                <div className="px-4 py-2 bg-black/20 border-t border-indigo-800/30">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-indigo-300">
-                      Choose minority, survive rounds, win big!
-                    </p>
-                    {pool.popularity >= 7 && (
-                      <div className="flex items-center">
-                        <Flame className="h-3 w-3 text-red-500 mr-1" />
-                        <span className="text-xs text-amber-400">Hot</span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             );
           })}
         </div>
-        
+
         {/* Load More Button */}
         {visiblePools < filteredPools.length && (
-          <div className="text-center">
+          <div className="flex justify-center mt-8">
             <button
               onClick={loadMorePools}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 inline-flex items-center"
+              className="bg-indigo-900/30 hover:bg-indigo-900/50 text-indigo-300 py-2 px-6 rounded-lg border border-indigo-700/30 transition-all duration-200"
             >
               Load More Pools
-              <ArrowRight className="ml-2" size={16} />
             </button>
           </div>
         )}
-        
-        {/* Empty State */}
+
+        {/* No Results */}
         {filteredPools.length === 0 && (
-          <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-indigo-900/30 rounded-full flex items-center justify-center mb-4">
-              <Trophy className="text-indigo-400" size={40} />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">No Pools Found</h3>
-            <p className="text-indigo-300 max-w-md mx-auto">
-              There are currently no pools matching your filters. Try adjusting your search or check back later!
+          <div className="text-center py-16">
+            <p className="text-indigo-400 mb-4">
+              No pools found matching your criteria
             </p>
+            <button
+              onClick={() => {
+                setActiveFilter("all");
+                setSearchQuery("");
+              }}
+              className="bg-indigo-900/30 hover:bg-indigo-900/50 text-indigo-300 py-2 px-6 rounded-lg border border-indigo-700/30 transition-all duration-200"
+            >
+              Reset Filters
+            </button>
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <StakingModal />
+      <CreatePoolModal />
     </div>
   );
 }

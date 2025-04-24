@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { usePoolCount } from '../../hooks/FlareFlipHooks';
 import { Link } from 'react-router-dom';
 import Header from '../header/header';
 
 const HeroSection: React.FC = () => {
   const [isAnimated, setIsAnimated] = useState(false);
+  const { poolCount } = usePoolCount();
   
   useEffect(() => {
     setIsAnimated(true);
@@ -23,7 +25,6 @@ const HeroSection: React.FC = () => {
         <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full border border-pink-500 opacity-10"></div>
       </div>
 
-      {/* Header with logo and sign up buttons */}
        <Header />
 
       {/* Main hero content */}
@@ -142,7 +143,7 @@ const HeroSection: React.FC = () => {
             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-0 group-hover:opacity-30 transition duration-300"></div>
             <div className="relative flex flex-col items-center">
               <div className="text-gray-400 text-sm font-medium">Active Arenas</div>
-              <div className="text-2xl font-bold text-white mt-2">12</div>
+              <div className="text-2xl font-bold text-white mt-2">{poolCount}</div>
             </div>
           </div>
           <div className="bg-gray-800 bg-opacity-60 backdrop-blur-sm rounded-lg p-5 border border-gray-700 relative group">
