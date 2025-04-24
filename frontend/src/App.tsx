@@ -1,5 +1,6 @@
 import LandingPage from "./pages/landing-page";
 import HowItWorksPage from "./pages/how-to-play";
+import "@rainbow-me/rainbowkit/styles.css";
 import GamingPoolsSection from "./pages/pools-page";
 import MinorityWinsGame from "./pages/playgame-page";
 import {

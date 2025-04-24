@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 const Header = () => {
@@ -11,21 +10,43 @@ const Header = () => {
             <span className="text-pink-500">FLIP</span>
           </h1>
         </div>
-        <div className="flex space-x-4">
-          <Link
-            to="/signup"
-            className="px-4 py-2 border border-gray-600 rounded-md hover:border-pink-500 transition duration-300 text-sm font-medium"
-          >
-            Sign Up
-          </Link>
-          <Link
-            to="/signup"
-            className="px-4 py-2 bg-pink-500 rounded-md hover:bg-pink-600 transition duration-300 text-sm font-medium"
-          >
-            Sign Up
-          </Link>
-          <ConnectButton />
-        </div>
+        <div className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 px-4 py-2 rounded-lg border border-yellow-600 shadow-sm hover:shadow-glow-gold transition-all duration-300">
+            <ConnectButton.Custom>
+              {({
+                account,
+                chain,
+                openAccountModal,
+                openConnectModal,
+                mounted,
+              }) => {
+                const connected = mounted && account;
+
+                return (
+                  <div>
+                    {connected ? (
+                      <button
+                        onClick={openAccountModal}
+                        className="flex items-center"
+                      >
+                        <span className="text-white font-medium">
+                          {account.displayName}
+                        </span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={openConnectModal}
+                        className="flex items-center"
+                      >
+                        <span className="text-white font-medium">
+                          Connect Wallet
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                );
+              }}
+            </ConnectButton.Custom>
+          </div>
       </div>
     </div>
   );
