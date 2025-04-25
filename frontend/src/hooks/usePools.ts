@@ -1,10 +1,9 @@
 // hooks/usePools.ts
 import { Pool } from "../types/generated";
-import { useReadContracts, useReadContract} from "wagmi";
+import { useReadContracts, useReadContract } from "wagmi";
 import flareFlipABI from "./ABI/FlareFlip.json";
 import { formatFigures } from "../utils/conversion";
 import { CONTRACT_ADDRESS } from "./ABI/address";
-
 
 export function usePools() {
   // Get total pool count
@@ -16,11 +15,11 @@ export function usePools() {
 
   // Use useReadContracts to fetch all pools in a batch
   const poolsCount = poolCount ? Number(poolCount) : 0;
-  
+
   const poolIndexes = Array.from({ length: poolsCount }, (_, i) => i);
-  
+
   const { data: poolsData } = useReadContracts({
-    contracts: poolIndexes.map(index => ({
+    contracts: poolIndexes.map((index) => ({
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: flareFlipABI.abi,
       functionName: "pools",
@@ -29,47 +28,60 @@ export function usePools() {
   });
 
   // Map the data to frontend format
-  const pool: Pool[] = poolsData 
+  const pool: Pool[] = poolsData
     ? poolsData
         .map((result, index) => {
-          if (result.status === 'success' && result.result) {
-            return mapContractPoolToFrontendPool(result.result, index,result);
+          if (result.status === "success" && result.result) {
+            return mapContractPoolToFrontendPool(result.result, index, result);
           }
           return null;
         })
         .filter((pool): pool is Pool => pool !== null)
     : [];
 
-  return { pool, };
+  return { pool };
 }
 
 // Helper to map contract data to frontend Pool type
-function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any): Pool {
+function mapContractPoolToFrontendPool(
+  contractPool: any,
+  id: number,
+  result: any
+): Pool {
   console.log("result", result);
-    console.log("contractPool", contractPool);
+  console.log("contractPool", contractPool);
   return {
     id: id.toString(),
     asset: contractPool[0],
     icon: `/${contractPool[0]}.svg`,
-    entryFee: parseFloat((Number(contractPool[2]) / 10**18).toFixed(2)),
+    entryFee: parseFloat((Number(contractPool[2]) / 10 ** 18).toFixed(2)),
     feeToken: "FLR",
     maxPlayers: Number(contractPool[3]),
     currentPlayers: Number(contractPool[4]),
     status: getStatusFromEnum(contractPool[6]),
-    potentialReward:parseFloat((Number(contractPool[5]) / 10**18).toFixed(2)),
-    difficulty: "medium", 
-    popularity: 5, 
+    potentialReward: parseFloat(
+      (Number(contractPool[5]) / 10 ** 18).toFixed(2)
+    ),
+    difficulty: "medium",
+    popularity: 5,
     creator: contractPool[7],
   };
 }
 
-function getStatusFromEnum(status: number): "open" | "filling" | "active" | "completed" {
-  switch(status) {
-    case 0: return "open";
-    case 1: return "filling";
-    case 2: return "active";
-    case 3: return "completed";
-    default: return "open";
+function getStatusFromEnum(
+  status: number
+): "open" | "filling" | "active" | "completed" {
+  switch (status) {
+    case 0:
+      return "open";
+    case 1:
+      return "filling";
+    case 2:
+      return "active";
+    case 3:
+      return "completed";
+    default:
+      return "open";
   }
 }
 

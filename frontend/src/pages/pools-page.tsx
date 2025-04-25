@@ -17,10 +17,7 @@ import StakingModal from "../components/modals/StakingModal";
 import { Pool } from "../types/generated";
 import { StakerInfo } from "../types/generated";
 import { usePools } from "../hooks/usePools";
-import {
-  useStake,
-  useCreatePool,
-} from "../hooks/FlareFlipHooks";
+import { useStake, useCreatePool } from "../hooks/FlareFlipHooks";
 // Types
 
 export default function GamingPoolsSection() {
@@ -29,23 +26,17 @@ export default function GamingPoolsSection() {
   const { stake } = useStake();
   const { pool } = usePools();
 
+  const { createPool, isPending: isCreatingPool } = useCreatePool();
 
-  const {
-    createPool,
-    isPending: isCreatingPool,
-  } = useCreatePool();
-  
   const [pools, setPools] = useState<Pool[]>([]);
 
   useEffect(() => {
     setPools(pool);
   }, [pools]);
 
-  
-
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
     stakedAmount: 500,
-    lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000, 
+    lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000,
     activePoolsCount: 2,
     earnings: 45,
   });
@@ -90,35 +81,37 @@ export default function GamingPoolsSection() {
   };
 
   // Add animation effect when joining a pool
- 
+
   const HandlejoinPool = async (poolId: string) => {
     try {
       setAnimatingPoolId(poolId);
-      
+
       // Find the pool to get its entry fee
-      const pool = pools.find(p => p.id === poolId);
+      const pool = pools.find((p) => p.id === poolId);
       if (!pool) {
         throw new Error("Pool not found");
       }
-  
+
       // Convert poolId to number (assuming your contract uses uint256 for poolId)
       const numericPoolId = Number(poolId);
-      
+
       await joinPool(numericPoolId, pool.entryFee.toString());
-      
+
       // Update UI state after successful join
-      setPools(prevPools => 
-        prevPools.map(p => 
-          p.id === poolId 
-            ? { ...p, currentPlayers: p.currentPlayers + 1 } 
-            : p
+      setPools((prevPools) =>
+        prevPools.map((p) =>
+          p.id === poolId ? { ...p, currentPlayers: p.currentPlayers + 1 } : p
         )
       );
-      
+
       alert(`Successfully joined pool ${poolId}`);
     } catch (err) {
       console.error("Join pool error:", err);
-      alert(`Failed to join pool: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(
+        `Failed to join pool: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
     } finally {
       setAnimatingPoolId(null);
     }
@@ -181,29 +174,28 @@ export default function GamingPoolsSection() {
         alert("Entry fee must be > 0 and max players > 1");
         return;
       }
-  
+
       // Check staker requirements
       const MINIMUM_STAKE = 100;
       if (stakerInfo.stakedAmount < MINIMUM_STAKE) {
         alert(`Minimum ${MINIMUM_STAKE} FLR staked required`);
         return;
       }
-  
+
       // Convert to uppercase to match contract
       const assetSymbol = newPool.asset.toUpperCase();
-      
+
       console.log("Submitting:", {
         entryFee: newPool.entryFee.toString(),
         maxPlayers: newPool.maxPlayers,
-        asset: assetSymbol
+        asset: assetSymbol,
       });
-  
+
       await createPool(
         newPool.entryFee.toString(),
         newPool.maxPlayers,
         assetSymbol
       );
-  
     } catch (err) {
       console.error("Creation error:", err);
       alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -319,12 +311,13 @@ export default function GamingPoolsSection() {
     const isJoiningThisPool = isJoiningPool && animatingPoolId === pool.id;
     switch (pool.status) {
       case "open":
-      return {
-        text: isJoiningThisPool ? "Joining..." : "Join Pool",
-        disabled: isJoiningPool, 
-        action: () => HandlejoinPool(pool.id),
-        className: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
-      };
+        return {
+          text: isJoiningThisPool ? "Joining..." : "Join Pool",
+          disabled: isJoiningPool,
+          action: () => HandlejoinPool(pool.id),
+          className:
+            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
+        };
       case "filling":
         return {
           text: "Almost Full!",
@@ -357,8 +350,6 @@ export default function GamingPoolsSection() {
         };
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-indigo-950">
@@ -554,7 +545,9 @@ export default function GamingPoolsSection() {
                       </div>
                     </div>
                     <div className="bg-indigo-800/20 rounded-xl p-3">
-                      <p className="text-xs text-indigo-400 mb-1">Starting price</p>
+                      <p className="text-xs text-indigo-400 mb-1">
+                        Starting price
+                      </p>
                       <div className="flex items-center gap-1">
                         <Trophy size={16} className="text-amber-400" />
                         <p className="text-lg font-bold text-white">
@@ -684,7 +677,10 @@ export default function GamingPoolsSection() {
         stakerInfo={stakerInfo}
         balanceData={
           balanceData
-            ? { value: Number(balanceData.formatted), currency: balanceData.symbol }
+            ? {
+                value: Number(balanceData.formatted),
+                currency: balanceData.symbol,
+              }
             : undefined
         }
         stakeAmount={stakeAmount}
