@@ -25,9 +25,8 @@ export default function GamingPoolsSection() {
   const { stake, isPending, isLoading, isSuccess, totalStaked } = useStake();
 
   // const { supportedAssets } = useSupportedAssets(0);
-
   // console.log("Supported Assets:", supportedAssets);
-  const [inputAmount, setInputAmount] = useState("");
+  // const [inputAmount, setInputAmount] = useState("");
 
   // Mock data with more variety for demonstration
   const [pools, setPools] = useState<Pool[]>([
@@ -174,11 +173,8 @@ export default function GamingPoolsSection() {
       creator: "0x71C...F39A",
     },
   ]);
-
-  // Mock user data
-  const [userAddress, setUserAddress] = useState<string>("0x71C...F39A"); // Mock user address
-  const [userBalance, setUserBalance] = useState<number>(1250); // Mock user balance
-  const [walletConnected, setWalletConnected] = useState<boolean>(false);
+ 
+ 
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
     stakedAmount: 500,
     lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000, // 7 days ago
@@ -195,7 +191,7 @@ export default function GamingPoolsSection() {
   const [showStakingModal, setShowStakingModal] = useState<boolean>(false);
   const [showCreatePoolModal, setShowCreatePoolModal] =
     useState<boolean>(false);
-  const [stakeAmount, setStakeAmount] = useState<string>("");
+  const [stakeAmount, setStakeAmount] = useState<number>();
   const [unstakeAmount, setUnstakeAmount] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"stake" | "unstake">("stake");
 
@@ -230,19 +226,17 @@ export default function GamingPoolsSection() {
 
   // Handle staking
   const handleStake = () => {
-    if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
+    console.log("Staking amount:", stakeAmount);
+
+    if (!stakeAmount || stakeAmount <= 0) {
       alert("Please enter a valid amount to stake");
       return;
     }
 
-    const amount = parseFloat(stakeAmount);
-    if (!inputAmount || parseFloat(inputAmount) <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-    stake(inputAmount);
-    setInputAmount("");
-    alert(`Successfully staked ${amount} FLR`);
+   
+    stake(stakeAmount.toString());
+    // setInputAmount("");
+    alert(`Successfully staked ${stakeAmount} FLR`);
   };
 
   // Handle unstaking
@@ -575,7 +569,7 @@ export default function GamingPoolsSection() {
                     type="number"
                     placeholder="0.0"
                     value={stakeAmount}
-                    onChange={(e) => setStakeAmount(e.target.value)}
+                    onChange={(e) => setStakeAmount(e.target.value ? parseFloat(e.target.value) : undefined)}
                     className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
@@ -583,7 +577,7 @@ export default function GamingPoolsSection() {
                   </span>
                 </div>
                 <p className="text-xs text-indigo-400 mt-1">
-                  Balance: {userBalance} FLR
+                  Balance: {balanceData?.formatted || "0.00"} FLR
                 </p>
               </div>
 
@@ -836,9 +830,6 @@ export default function GamingPoolsSection() {
                 <Flame size={18} />
                 <span>
                   Stake{" "}
-                  {stakerInfo.stakedAmount > 0
-                    ? `(${stakerInfo.stakedAmount})`
-                    : ""}
                 </span>
               </button>
             </div>
@@ -1051,7 +1042,7 @@ export default function GamingPoolsSection() {
                         </span>
                       </div>
 
-                      {pool.creator && pool.creator === userAddress && (
+                      {pool.creator && pool.creator === address && (
                         <span className="text-xs text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full">
                           Your Pool
                         </span>
