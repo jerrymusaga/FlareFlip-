@@ -343,24 +343,33 @@ export function useUnstake() {
 
 // Hook to create a pool
 export function useCreatePool() {
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const createPool = (
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  
+  const createPool = async (
     entryFee: string,
     maxParticipants: number,
     assetSymbol: string
   ) => {
-    writeContract({
-      address: CONTRACT_ADDRESS,
-      abi: flareFlipABI.abi,
-      functionName: "createPool",
-      args: [parseEther(entryFee), BigInt(maxParticipants), assetSymbol],
-    });
+    try {
+      await writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: flareFlipABI.abi,
+        functionName: "createPool",
+        args: [
+          parseEther(entryFee), 
+          BigInt(maxParticipants), 
+          assetSymbol.toUpperCase() // Ensure uppercase
+        ],
+      });
+    } catch (err) {
+      console.error("Contract error:", err);
+      throw new Error("Failed to create pool: " + (err as Error).message);
+    }
   };
 
-  return { createPool, hash, isPending, isLoading, isSuccess };
+  return { createPool, hash, isPending, error };
 }
+
 
 // Hook to join a pool
 export function useJoinPool() {
