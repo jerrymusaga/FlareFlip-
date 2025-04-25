@@ -8,176 +8,44 @@ import {
   ArrowRight,
   Flame,
   Plus,
-  Wallet,
-  Lock,
-  Unlock,
-  Settings,
-  AlertTriangle,
+  DollarSign,
 } from "lucide-react";
-import { useAccount, useReadContract, useBalance } from "wagmi";
+import { useJoinPool } from "../hooks/useJoinPool";
+import { useAccount, useBalance } from "wagmi";
+import CreatePoolModal from "../components/modals/CreatePoolModal";
+import StakingModal from "../components/modals/StakingModal";
 import { Pool } from "../types/generated";
 import { StakerInfo } from "../types/generated";
-import { useStake, useSupportedAssets } from "../hooks/FlareFlipHooks";
+import { usePools } from "../hooks/usePools";
+import {
+  useStake,
+  useCreatePool,
+} from "../hooks/FlareFlipHooks";
 // Types
 
 export default function GamingPoolsSection() {
   const { address, isConnected } = useAccount();
-  const { stake, isPending, isLoading, isSuccess, totalStaked } = useStake();
+  const { joinPool, isPending: isJoiningPool } = useJoinPool();
+  const { stake } = useStake();
+  const { pool } = usePools();
 
-  // const { supportedAssets } = useSupportedAssets(0);
-  // console.log("Supported Assets:", supportedAssets);
-  // const [inputAmount, setInputAmount] = useState("");
 
-  // Mock data with more variety for demonstration
-  const [pools, setPools] = useState<Pool[]>([
-    {
-      id: "eth-classic",
-      asset: "Ethereum",
-      icon: "/ethereum.svg",
-      entryFee: 10,
-      feeToken: "FLR",
-      maxPlayers: 64,
-      currentPlayers: 28,
-      status: "open",
-      potentialReward: 640,
-      difficulty: "medium",
-      popularity: 8,
-      creator: "0x71C...F39A",
-    },
-    {
-      id: "btc-royale",
-      asset: "Bitcoin",
-      icon: "/bitcoin.svg",
-      entryFee: 25,
-      feeToken: "FLR",
-      maxPlayers: 32,
-      currentPlayers: 32,
-      status: "active",
-      timeRemaining: 120,
-      potentialReward: 800,
-      difficulty: "hard",
-      popularity: 9,
-      creator: "0x82D...A42B",
-    },
-    {
-      id: "sol-sprint",
-      asset: "Solana",
-      icon: "/solana.svg",
-      entryFee: 5,
-      feeToken: "FLR",
-      maxPlayers: 128,
-      currentPlayers: 42,
-      status: "open",
-      potentialReward: 640,
-      difficulty: "easy",
-      popularity: 7,
-      creator: "0x71C...F39A",
-    },
-    {
-      id: "flare-fusion",
-      asset: "Flare",
-      icon: "/flare.svg",
-      entryFee: 50,
-      feeToken: "FLR",
-      maxPlayers: 16,
-      currentPlayers: 16,
-      status: "completed",
-      potentialReward: 800,
-      difficulty: "expert",
-      popularity: 6,
-      creator: "0x45B...C78D",
-    },
-    {
-      id: "avax-arena",
-      asset: "Avalanche",
-      icon: "/avax.svg",
-      entryFee: 15,
-      feeToken: "FLR",
-      maxPlayers: 48,
-      currentPlayers: 12,
-      status: "open",
-      potentialReward: 720,
-      difficulty: "medium",
-      popularity: 5,
-      creator: "0x91A...D25E",
-    },
-    {
-      id: "dot-duel",
-      asset: "Polkadot",
-      icon: "/polkadot.svg",
-      entryFee: 8,
-      feeToken: "FLR",
-      maxPlayers: 64,
-      currentPlayers: 58,
-      status: "filling",
-      potentialReward: 512,
-      difficulty: "medium",
-      popularity: 7,
-      creator: "0x82D...A42B",
-    },
-    {
-      id: "ada-arena",
-      asset: "Cardano",
-      icon: "/cardano.svg",
-      entryFee: 12,
-      feeToken: "FLR",
-      maxPlayers: 32,
-      currentPlayers: 14,
-      status: "open",
-      potentialReward: 384,
-      difficulty: "easy",
-      popularity: 6,
-      creator: "0x71C...F39A",
-    },
-    {
-      id: "matic-mayhem",
-      asset: "Polygon",
-      icon: "/polygon.svg",
-      entryFee: 6,
-      feeToken: "FLR",
-      maxPlayers: 100,
-      currentPlayers: 87,
-      status: "filling",
-      potentialReward: 600,
-      difficulty: "hard",
-      popularity: 8,
-      creator: "0x45B...C78D",
-    },
-    {
-      id: "bnb-battle",
-      asset: "Binance",
-      icon: "/bnb.svg",
-      entryFee: 18,
-      feeToken: "FLR",
-      maxPlayers: 48,
-      currentPlayers: 48,
-      status: "active",
-      timeRemaining: 300,
-      potentialReward: 864,
-      difficulty: "hard",
-      popularity: 9,
-      creator: "0x91A...D25E",
-    },
-    {
-      id: "xrp-xtreme",
-      asset: "XRP",
-      icon: "/xrp.svg",
-      entryFee: 20,
-      feeToken: "FLR",
-      maxPlayers: 24,
-      currentPlayers: 3,
-      status: "open",
-      potentialReward: 480,
-      difficulty: "medium",
-      popularity: 4,
-      creator: "0x71C...F39A",
-    },
-  ]);
- 
- 
+  const {
+    createPool,
+    isPending: isCreatingPool,
+  } = useCreatePool();
+  
+  const [pools, setPools] = useState<Pool[]>([]);
+
+  useEffect(() => {
+    setPools(pool);
+  }, [pools]);
+
+  
+
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
     stakedAmount: 500,
-    lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000, // 7 days ago
+    lastStakeTimestamp: Date.now() - 7 * 24 * 60 * 60 * 1000, 
     activePoolsCount: 2,
     earnings: 45,
   });
@@ -196,11 +64,17 @@ export default function GamingPoolsSection() {
   const [activeTab, setActiveTab] = useState<"stake" | "unstake">("stake");
 
   // New pool form state
-  const [newPool, setNewPool] = useState({
+  const [newPool, setNewPool] = useState<{
+    asset: string;
+    entryFee: number;
+    maxPlayers: number;
+    difficulty: "easy" | "medium" | "hard" | "expert";
+    assetId?: number;
+  }>({
     asset: "Ethereum",
     entryFee: 10,
     maxPlayers: 64,
-    difficulty: "medium" as "easy" | "medium" | "hard" | "expert",
+    difficulty: "medium",
   });
 
   const { data: balanceData, isError } = useBalance({
@@ -216,12 +90,38 @@ export default function GamingPoolsSection() {
   };
 
   // Add animation effect when joining a pool
-  const joinPool = (poolId: string) => {
-    setAnimatingPoolId(poolId);
-    setTimeout(() => {
+ 
+  const HandlejoinPool = async (poolId: string) => {
+    try {
+      setAnimatingPoolId(poolId);
+      
+      // Find the pool to get its entry fee
+      const pool = pools.find(p => p.id === poolId);
+      if (!pool) {
+        throw new Error("Pool not found");
+      }
+  
+      // Convert poolId to number (assuming your contract uses uint256 for poolId)
+      const numericPoolId = Number(poolId);
+      
+      await joinPool(numericPoolId, pool.entryFee.toString());
+      
+      // Update UI state after successful join
+      setPools(prevPools => 
+        prevPools.map(p => 
+          p.id === poolId 
+            ? { ...p, currentPlayers: p.currentPlayers + 1 } 
+            : p
+        )
+      );
+      
+      alert(`Successfully joined pool ${poolId}`);
+    } catch (err) {
+      console.error("Join pool error:", err);
+      alert(`Failed to join pool: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
       setAnimatingPoolId(null);
-      alert(`Connecting wallet to join ${poolId}`);
-    }, 800);
+    }
   };
 
   // Handle staking
@@ -233,7 +133,6 @@ export default function GamingPoolsSection() {
       return;
     }
 
-   
     stake(stakeAmount.toString());
     // setInputAmount("");
     alert(`Successfully staked ${stakeAmount} FLR`);
@@ -275,49 +174,41 @@ export default function GamingPoolsSection() {
     alert(`Successfully unstaked ${amount} FLR`);
   };
 
-  // Handle pool creation
-  const handleCreatePool = () => {
-    // Validate inputs
-    if (newPool.entryFee <= 0 || newPool.maxPlayers <= 1) {
-      alert("Please provide valid pool parameters");
-      return;
+  const handleCreatePool = async () => {
+    try {
+      // Validate inputs
+      if (newPool.entryFee <= 0 || newPool.maxPlayers <= 1) {
+        alert("Entry fee must be > 0 and max players > 1");
+        return;
+      }
+  
+      // Check staker requirements
+      const MINIMUM_STAKE = 100;
+      if (stakerInfo.stakedAmount < MINIMUM_STAKE) {
+        alert(`Minimum ${MINIMUM_STAKE} FLR staked required`);
+        return;
+      }
+  
+      // Convert to uppercase to match contract
+      const assetSymbol = newPool.asset.toUpperCase();
+      
+      console.log("Submitting:", {
+        entryFee: newPool.entryFee.toString(),
+        maxPlayers: newPool.maxPlayers,
+        asset: assetSymbol
+      });
+  
+      await createPool(
+        newPool.entryFee.toString(),
+        newPool.maxPlayers,
+        assetSymbol
+      );
+  
+    } catch (err) {
+      console.error("Creation error:", err);
+      alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    // Check if user has staked enough (minimum 100 FLR for demo)
-    const MINIMUM_STAKE = 100;
-    if (stakerInfo.stakedAmount < MINIMUM_STAKE) {
-      alert(`You need to stake at least ${MINIMUM_STAKE} FLR to create a pool`);
-      return;
-    }
-
-    // Create new pool
-    const newPoolId = `${newPool.asset.toLowerCase()}-${Math.floor(
-      Math.random() * 10000
-    )}`;
-    const createdPool: Pool = {
-      id: newPoolId,
-      asset: newPool.asset,
-      icon: `/${newPool.asset.toLowerCase()}.svg`,
-      entryFee: newPool.entryFee,
-      feeToken: "FLR",
-      maxPlayers: newPool.maxPlayers,
-      currentPlayers: 0,
-      status: "open",
-      potentialReward: newPool.entryFee * newPool.maxPlayers,
-      difficulty: newPool.difficulty,
-      popularity: 5, // Default popularity
-      creator: userAddress,
-    };
-
-    setPools([createdPool, ...pools]);
-    setStakerInfo({
-      ...stakerInfo,
-      activePoolsCount: stakerInfo.activePoolsCount + 1,
-    });
-    setShowCreatePoolModal(false);
-    alert(`Successfully created ${newPool.asset} pool!`);
   };
-
   // Filter, sort and search pools
   const filteredPools = pools
     .filter((pool) => {
@@ -425,20 +316,20 @@ export default function GamingPoolsSection() {
 
   // Get appropriate button info based on pool status
   const getButtonInfo = (pool: Pool) => {
+    const isJoiningThisPool = isJoiningPool && animatingPoolId === pool.id;
     switch (pool.status) {
       case "open":
-        return {
-          text: "Join Pool",
-          disabled: false,
-          action: () => joinPool(pool.id),
-          className:
-            "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
-        };
+      return {
+        text: isJoiningThisPool ? "Joining..." : "Join Pool",
+        disabled: isJoiningPool, 
+        action: () => HandlejoinPool(pool.id),
+        className: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
+      };
       case "filling":
         return {
           text: "Almost Full!",
           disabled: false,
-          action: () => joinPool(pool.id),
+          action: () => HandlejoinPool(pool.id),
           className:
             "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white",
         };
@@ -460,343 +351,14 @@ export default function GamingPoolsSection() {
         return {
           text: "Join Pool",
           disabled: false,
-          action: () => joinPool(pool.id),
+          action: () => HandlejoinPool(pool.id),
           className:
             "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
         };
     }
   };
 
-  // StakingModal Component
-  const StakingModal = () => {
-    if (!showStakingModal) return null;
 
-    return (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-2xl p-6 max-w-md w-full border border-indigo-700/30 shadow-xl">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Stake & Earn</h2>
-            <button
-              onClick={() => setShowStakingModal(false)}
-              className="text-indigo-300 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Staking Info Summary */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-indigo-800/30 rounded-xl p-4 border border-indigo-700/30">
-              <p className="text-xs text-indigo-300 mb-1">Total Staked</p>
-              <p className="text-2xl font-bold text-white">
-                {stakerInfo.stakedAmount} FLR
-              </p>
-            </div>
-            <div className="bg-indigo-800/30 rounded-xl p-4 border border-indigo-700/30">
-              <p className="text-xs text-indigo-300 mb-1">Earnings</p>
-              <p className="text-2xl font-bold text-green-400">
-                +{stakerInfo.earnings} FLR
-              </p>
-            </div>
-          </div>
-
-          {/* Lock Status */}
-          <div className="bg-indigo-800/20 rounded-xl p-4 border border-indigo-700/30 mb-6">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                {canUnstake() ? (
-                  <Unlock size={18} className="text-green-400" />
-                ) : (
-                  <Lock size={18} className="text-amber-400" />
-                )}
-                <p className="text-sm font-medium text-white">Lock Status</p>
-              </div>
-              <span
-                className={`text-sm ${
-                  canUnstake() ? "text-green-400" : "text-amber-400"
-                }`}
-              >
-                {getUnlockTimeRemaining()}
-              </span>
-            </div>
-            <div className="mt-2 text-xs text-indigo-300">
-              <p>
-                Last staked: {formatTimestamp(stakerInfo.lastStakeTimestamp)}
-              </p>
-              <p>Active pools: {stakerInfo.activePoolsCount}</p>
-              {!canUnstake() && stakerInfo.activePoolsCount > 0 && (
-                <p className="text-amber-400 mt-1">
-                  <AlertTriangle size={12} className="inline mr-1" />
-                  Cannot unstake while pools are active
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs for Stake/Unstake */}
-          <div className="flex rounded-lg overflow-hidden border border-indigo-700/30 mb-6">
-            <button
-              onClick={() => setActiveTab("stake")}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                activeTab === "stake"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50"
-              }`}
-            >
-              Stake
-            </button>
-            <button
-              onClick={() => setActiveTab("unstake")}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                activeTab === "unstake"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/50"
-              }`}
-            >
-              Unstake
-            </button>
-          </div>
-
-          {/* Stake Form */}
-          {activeTab === "stake" && (
-            <div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-indigo-300 mb-1">
-                  Amount to Stake
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    placeholder="0.0"
-                    value={stakeAmount}
-                    onChange={(e) => setStakeAmount(e.target.value ? parseFloat(e.target.value) : undefined)}
-                    className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
-                    FLR
-                  </span>
-                </div>
-                <p className="text-xs text-indigo-400 mt-1">
-                  Balance: {balanceData?.formatted || "0.00"} FLR
-                </p>
-              </div>
-
-              <div className="mb-4 text-xs text-indigo-300">
-                <p className="mb-1">• Minimum staking period: 7 days</p>
-                <p className="mb-1">• Cannot unstake while pools are active</p>
-                <p>• Earn 2% from pool entry fees as creator rewards</p>
-              </div>
-
-              <button
-                onClick={handleStake}
-                className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200"
-              >
-                Stake FLR
-              </button>
-            </div>
-          )}
-
-          {/* Unstake Form */}
-          {activeTab === "unstake" && (
-            <div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-indigo-300 mb-1">
-                  Amount to Unstake
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    placeholder="0.0"
-                    value={unstakeAmount}
-                    onChange={(e) => setUnstakeAmount(e.target.value)}
-                    className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white placeholder-indigo-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    disabled={!canUnstake()}
-                  />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-indigo-400">
-                    FLR
-                  </span>
-                </div>
-                <p className="text-xs text-indigo-400 mt-1">
-                  Staked: {stakerInfo.stakedAmount} FLR
-                </p>
-              </div>
-
-              {!canUnstake() && (
-                <div className="mb-4 p-2 bg-amber-400/10 border border-amber-400/20 rounded-lg">
-                  <p className="text-xs text-amber-400 flex items-center">
-                    <AlertTriangle size={12} className="mr-1" />
-                    {stakerInfo.activePoolsCount > 0
-                      ? "You have active pools. Close them before unstaking."
-                      : "Minimum staking period not met yet."}
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={handleUnstake}
-                disabled={!canUnstake()}
-                className={`w-full py-3 px-4 font-medium rounded-lg transition-all duration-200 ${
-                  canUnstake()
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-                    : "bg-indigo-900/50 text-indigo-400 cursor-not-allowed"
-                }`}
-              >
-                Unstake FLR
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Create Pool Modal Component
-  const CreatePoolModal = () => {
-    if (!showCreatePoolModal) return null;
-
-    const assetOptions = [
-      "Ethereum",
-      "Bitcoin",
-      "Solana",
-      "Flare",
-      "Avalanche",
-      "Polkadot",
-      "Cardano",
-      "Polygon",
-      "Binance",
-      "XRP",
-    ];
-
-    return (
-      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div className="bg-gradient-to-b from-indigo-900 to-indigo-950 rounded-2xl p-6 max-w-md w-full border border-indigo-700/30 shadow-xl">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Create New Pool</h2>
-            <button
-              onClick={() => setShowCreatePoolModal(false)}
-              className="text-indigo-300 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Pool Creation Form */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-indigo-300 mb-1">
-                Select Asset
-              </label>
-              <select
-                value={newPool.asset}
-                onChange={(e) =>
-                  setNewPool({ ...newPool, asset: e.target.value })
-                }
-                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                {assetOptions.map((asset) => (
-                  <option key={asset} value={asset}>
-                    {asset}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-indigo-300 mb-1">
-                Entry Fee (FLR)
-              </label>
-              <input
-                type="number"
-                value={newPool.entryFee}
-                onChange={(e) =>
-                  setNewPool({ ...newPool, entryFee: Number(e.target.value) })
-                }
-                min="1"
-                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-indigo-300 mb-1">
-                Maximum Players
-              </label>
-              <input
-                type="number"
-                value={newPool.maxPlayers}
-                onChange={(e) =>
-                  setNewPool({ ...newPool, maxPlayers: Number(e.target.value) })
-                }
-                min="2"
-                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-indigo-300 mb-1">
-                Difficulty
-              </label>
-              <select
-                value={newPool.difficulty}
-                onChange={(e) =>
-                  setNewPool({ ...newPool, difficulty: e.target.value as any })
-                }
-                className="w-full bg-indigo-900/50 border border-indigo-600/30 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-                <option value="expert">Expert</option>
-              </select>
-            </div>
-
-            <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-700/30">
-              <h4 className="text-sm font-medium text-purple-300 mb-2">
-                Pool Summary
-              </h4>
-              <p className="text-xs text-indigo-300">
-                Total Pool Size: {newPool.entryFee * newPool.maxPlayers} FLR
-              </p>
-              <p className="text-xs text-indigo-300">
-                Creator Fee:{" "}
-                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.02)} FLR
-                (2%)
-              </p>
-              <p className="text-xs text-indigo-300">
-                Platform Fee:{" "}
-                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.01)} FLR
-                (1%)
-              </p>
-              <p className="text-xs text-green-400 font-medium mt-1">
-                Player Payout:{" "}
-                {Math.round(newPool.entryFee * newPool.maxPlayers * 0.97)} FLR
-              </p>
-            </div>
-
-            {stakerInfo.stakedAmount < 100 && (
-              <div className="mt-2 p-2 bg-amber-400/10 border border-amber-400/20 rounded-lg">
-                <p className="text-xs text-amber-400 flex items-center">
-                  <AlertTriangle size={12} className="mr-1" />
-                  You need at least 100 FLR staked to create a pool
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={handleCreatePool}
-              disabled={stakerInfo.stakedAmount < 100}
-              className={`w-full py-3 px-4 font-medium rounded-lg transition-all duration-200 mt-4 ${
-                stakerInfo.stakedAmount >= 100
-                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-                  : "bg-indigo-900/50 text-indigo-400 cursor-not-allowed"
-              }`}
-            >
-              Create Pool
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-indigo-950">
@@ -828,9 +390,7 @@ export default function GamingPoolsSection() {
                 className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 px-4 rounded-lg transition-all duration-200"
               >
                 <Flame size={18} />
-                <span>
-                  Stake{" "}
-                </span>
+                <span>Stake </span>
               </button>
             </div>
           </div>
@@ -994,9 +554,28 @@ export default function GamingPoolsSection() {
                       </div>
                     </div>
                     <div className="bg-indigo-800/20 rounded-xl p-3">
-                      <p className="text-xs text-indigo-400 mb-1">Reward</p>
+                      <p className="text-xs text-indigo-400 mb-1">Starting price</p>
                       <div className="flex items-center gap-1">
                         <Trophy size={16} className="text-amber-400" />
+                        <p className="text-lg font-bold text-white">
+                          {pool.potentialReward} {pool.feeToken}
+                        </p>
+                      </div>
+                    </div>
+                    {/* price fee, current price and last price */}
+                    <div className="bg-indigo-800/20 rounded-xl p-3">
+                      <p className="text-xs text-indigo-400 mb-1">Reward</p>
+                      <div className="flex items-center gap-1">
+                        <DollarSign size={16} className="text-amber-400" />
+                        <p className="text-lg font-bold text-white">
+                          {pool.potentialReward} {pool.feeToken}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-indigo-800/20 rounded-xl p-3">
+                      <p className="text-xs text-indigo-400 mb-1">Last Price</p>
+                      <div className="flex items-center gap-1">
+                        <DollarSign size={16} className="text-amber-400" />
                         <p className="text-lg font-bold text-white">
                           {pool.potentialReward} {pool.feeToken}
                         </p>
@@ -1099,8 +678,37 @@ export default function GamingPoolsSection() {
       </div>
 
       {/* Modals */}
-      <StakingModal />
-      <CreatePoolModal />
+      <StakingModal
+        showStakingModal={showStakingModal}
+        setShowStakingModal={setShowStakingModal}
+        stakerInfo={stakerInfo}
+        balanceData={
+          balanceData
+            ? { value: Number(balanceData.formatted), currency: balanceData.symbol }
+            : undefined
+        }
+        stakeAmount={stakeAmount}
+        setStakeAmount={setStakeAmount}
+        unstakeAmount={unstakeAmount}
+        setUnstakeAmount={setUnstakeAmount}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        handleStake={handleStake}
+        handleUnstake={handleUnstake}
+        canUnstake={canUnstake}
+        formatTimestamp={formatTimestamp}
+        getUnlockTimeRemaining={getUnlockTimeRemaining}
+      />
+
+      <CreatePoolModal
+        showCreatePoolModal={showCreatePoolModal}
+        setShowCreatePoolModal={setShowCreatePoolModal}
+        stakerInfo={stakerInfo}
+        newPool={newPool}
+        setNewPool={setNewPool}
+        handleCreatePool={handleCreatePool}
+        isCreatingPool={isCreatingPool}
+      />
     </div>
   );
 }
