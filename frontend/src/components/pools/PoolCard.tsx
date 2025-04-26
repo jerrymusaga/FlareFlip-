@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Pool } from "../../types/generated";
 import { usePoolDetails, useUserPools } from "../../hooks/FlareFlipHooks";
+import { motion } from "framer-motion";
 
 import { Trophy, Users, Coins, Zap, DollarSign } from "lucide-react";
 
@@ -10,11 +11,19 @@ interface PoolCardProps {
   address?: `0x${string}` | string;
   onJoinPool: (poolId: string) => Promise<void>;
   onPlayPool?: (poolId: string) => Promise<void>;
+  isRecentlyJoined?: boolean; // Flag to activate pulse animation
 }
 
-export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: PoolCardProps) {
+export default function PoolCard({
+  pool,
+  isRecentlyJoined = false,
+  address,
+  onJoinPool,
+  onPlayPool,
+}: PoolCardProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(false);
   const { userPoolIds } = useUserPools();
   const { pool: detailedPool } = usePoolDetails(BigInt(pool.id));
   const [AssetPrice, setCurrentPrice] = useState({
@@ -24,7 +33,16 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
   const navigate = useNavigate();
 
   const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
- 
+
+  // Set pulsing effect when the pool is recently joined
+  useEffect(() => {
+    if (isRecentlyJoined) {
+      setIsPulsing(true);
+      const timer = setTimeout(() => setIsPulsing(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [isRecentlyJoined]);
+
   useEffect(() => {
     if (detailedPool?.marketData) {
       setCurrentPrice({
@@ -59,7 +77,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
       setIsPlaying(false);
     }
   };
-  
+
   const getButtonInfo = () => {
     // If user created this pool
     if (pool.creator === address) {
@@ -90,7 +108,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
         };
       }
     }
-  
+
     switch (pool.status) {
       case "open":
         return {
@@ -136,7 +154,22 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
   const buttonInfo = getButtonInfo();
 
   return (
-    <div className="bg-gradient-to-b from-indigo-900/40 to-indigo-950/40 rounded-2xl border border-indigo-600/20 overflow-hidden">
+    <motion.div
+      animate={{
+        scale: isPulsing ? [1, 1.02, 1] : 1,
+        boxShadow: isPulsing ? "0 0 10px rgba(139, 92, 246, 0.5)" : "none",
+      }}
+      transition={{
+        duration: 1,
+        repeat: isPulsing ? 3 : 0,
+        ease: "easeInOut",
+      }}
+      className="bg-gradient-to-b from-indigo-900/40 to-indigo-950/40 rounded-2xl border border-indigo-600/20 overflow-hidden relative"
+    >
+      {isPulsing && (
+        <div className="absolute inset-0 rounded-2xl border-2 border-purple-400 pointer-events-none animate-ping opacity-70"></div>
+      )}
+
       {/* Pool Header */}
       <div className="relative p-6 pb-4">
         <div className="flex justify-between items-start">
@@ -176,7 +209,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
               </p>
             </div>
           </div>
-          
+
           <div className="bg-indigo-800/20 rounded-xl p-3">
             <p className="text-xs text-indigo-400 mb-1">Prize Pool</p>
             <div className="flex items-center gap-1">
@@ -186,6 +219,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
               </p>
             </div>
           </div>
+
           <div className="bg-indigo-800/20 rounded-xl p-3">
             <p className="text-xs text-indigo-400 mb-1">Last Price</p>
             <div className="flex items-center gap-1">
@@ -198,14 +232,21 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
         </div>
 
         <div className="space-y-3">
+          {/* Updated Players Section with animation */}
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <Users size={16} className="text-indigo-400" />
               <span className="text-sm text-indigo-300">Players</span>
             </div>
-            <span className="text-sm font-medium text-white">
+            <motion.span
+              key={`players-${pool.currentPlayers}`}
+              initial={{ scale: 1.5, color: "#a78bfa" }}
+              animate={{ scale: 1, color: "#ffffff" }}
+              transition={{ duration: 0.5 }}
+              className="text-sm font-medium text-white"
+            >
               {pool.currentPlayers}/{pool.maxPlayers}
-            </span>
+            </motion.span>
           </div>
 
           <div className="w-full bg-indigo-900/50 rounded-full h-2 overflow-hidden">
@@ -244,6 +285,6 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: Pool
           {buttonInfo.text}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

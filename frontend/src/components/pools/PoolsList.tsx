@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Coins, Flame, Plus } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Coins, Flame, Plus, Users } from "lucide-react";
 import { useAccount } from "wagmi";
 import { Pool, StakerInfo } from "../../types/generated";
 import PoolCard from "./PoolCard";
 import { useJoinPool } from "../../hooks/useJoinPool";
+import { toast } from "sonner";
+import { usePoolEvents } from "../../hooks/usePoolEvents";
 
 interface PoolsListProps {
   pools: Pool[];
@@ -15,7 +17,7 @@ interface PoolsListProps {
 }
 
 export default function PoolsList({
-  pools,
+  pools: initialPools,
   stakerInfo,
   balanceData,
   isConnected,
@@ -24,41 +26,98 @@ export default function PoolsList({
 }: PoolsListProps) {
   const { address } = useAccount();
   const { joinPool, isPending: isJoiningPool } = useJoinPool();
-  
+
+  const [pools, setPools] = useState<Pool[]>(initialPools);
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortBy, setSortBy] = useState("popularity");
   const [searchQuery, setSearchQuery] = useState("");
   const [visiblePools, setVisiblePools] = useState(6);
-  const [animatingPoolId, setAnimatingPoolId] = useState<string | null>(null);
+  const [recentlyJoinedPools, setRecentlyJoinedPools] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Update pools when initialPools changes
+  useEffect(() => {
+    if (initialPools && initialPools.length > 0) {
+      setPools(initialPools);
+    }
+  }, [initialPools]);
+
+  // Handle player joined event
+  const handlePlayerJoined = useCallback(
+    (poolId: bigint, player: string) => {
+      // Update the pools state when a player joins
+      setPools((prevPools) =>
+        prevPools.map((pool) => {
+          if (pool.id === poolId.toString()) {
+            return {
+              ...pool,
+              currentPlayers: pool.currentPlayers + 1,
+              // If almost full, update status to filling
+              status:
+                pool.currentPlayers + 1 >= pool.maxPlayers * 0.8 &&
+                pool.status === "open"
+                  ? "filling"
+                  : pool.status,
+            };
+          }
+          return pool;
+        })
+      );
+
+      // Add to recently joined set for animation if the current user joined
+      if (address && player.toLowerCase() === address.toLowerCase()) {
+        setRecentlyJoinedPools((prev) => new Set([...prev, poolId.toString()]));
+
+        // Show success toast for current user
+        toast.success(`You've joined Pool #${poolId}!`);
+      } else {
+        // Show info toast for other users
+        toast.info(`New player joined Pool #${poolId}`);
+      }
+
+      // Remove pool from recently joined after animation completes (4 seconds)
+      setTimeout(() => {
+        setRecentlyJoinedPools((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(poolId.toString());
+          return newSet;
+        });
+      }, 4000);
+    },
+    [address]
+  );
+
+  // Setup event listener using the custom hook
+  usePoolEvents({ onPlayerJoined: handlePlayerJoined });
 
   // Handle joining a pool
   const handleJoinPool = async (poolId: string) => {
     try {
-      setAnimatingPoolId(poolId);
-
       const pool = pools.find((p) => p.id === poolId);
       if (!pool) {
         throw new Error("Pool not found");
       }
-      const numericPoolId = Number(poolId);
 
-      await joinPool(numericPoolId, pool.entryFee.toString());
-      
-      // You would normally update this from the server, but for now:
-      // This is just UI feedback until the next data refresh
-      
+      await joinPool(Number(poolId), pool.entryFee.toString());
+
+      // Note: We don't need to update the state here because
+      // the event listener will handle that when the blockchain event is emitted
     } catch (err) {
       console.error("Join pool error:", err);
-      alert(
+      toast.error(
         `Failed to join pool: ${
           err instanceof Error ? err.message : "Unknown error"
         }`
       );
-    } finally {
-      setAnimatingPoolId(null);
     }
   };
 
+  // Handle play pool
+  const handlePlayPool = async (poolId: string) => {
+    // This will be handled by the PoolCard component's navigation
+    return Promise.resolve();
+  };
 
   // Filter, sort and search pools
   const filteredPools = pools
@@ -93,7 +152,7 @@ export default function PoolsList({
     });
 
   const loadMorePools = () => {
-    setVisiblePools(prev => Math.min(prev + 6, filteredPools.length));
+    setVisiblePools((prev) => Math.min(prev + 6, filteredPools.length));
   };
 
   return (
@@ -114,7 +173,8 @@ export default function PoolsList({
               <div className="flex items-center gap-1 mt-1">
                 <Coins size={14} className="text-amber-400" />
                 <span className="font-medium text-white">
-                  {balanceData?.formatted || "0.00"} {balanceData?.symbol || "FLR"}
+                  {balanceData?.formatted || "0.00"}{" "}
+                  {balanceData?.symbol || "FLR"}
                 </span>
               </div>
             </div>
@@ -126,7 +186,7 @@ export default function PoolsList({
               <Flame size={18} />
               <span>Stake</span>
             </button>
-            
+
             {isConnected && stakerInfo.stakedAmount >= 100 && (
               <button
                 onClick={onShowCreateModal}
@@ -163,7 +223,7 @@ export default function PoolsList({
           >
             Open
           </button>
-        
+
           <button
             onClick={() => setActiveFilter("active")}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
@@ -215,12 +275,14 @@ export default function PoolsList({
 
       {/* Pools Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPools.slice(0, visiblePools).map(pool => (
+        {filteredPools.slice(0, visiblePools).map((pool) => (
           <PoolCard
             key={pool.id}
             pool={pool}
             address={address}
             onJoinPool={handleJoinPool}
+            onPlayPool={handlePlayPool}
+            isRecentlyJoined={recentlyJoinedPools.has(pool.id)}
           />
         ))}
       </div>
@@ -236,7 +298,7 @@ export default function PoolsList({
           </button>
         </div>
       )}
-      
+
       {/* No Results */}
       {filteredPools.length === 0 && (
         <div className="text-center py-16">
