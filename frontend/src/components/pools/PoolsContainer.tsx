@@ -38,11 +38,12 @@ export default function PoolsContainer() {
             return {
               ...pool,
               currentPlayers: pool.currentPlayers + 1,
-              // If almost full, update status to filling
+              potentialReward: pool.potentialReward + pool.entryFee,
+              // If full, update status to active
               status:
                 pool.currentPlayers + 1 >= pool.maxPlayers * 0.8 &&
                 pool.status === "open"
-                  ? "filling"
+                  ? "active"
                   : pool.status,
             };
           }
@@ -162,16 +163,7 @@ export default function PoolsContainer() {
           >
             Open
           </button>
-          <button
-            onClick={() => setActiveFilter("filling")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-              activeFilter === "filling"
-                ? "bg-indigo-600 text-white"
-                : "bg-indigo-900/30 text-indigo-300 hover:bg-indigo-800/30"
-            }`}
-          >
-            Filling Fast
-          </button>
+
           <button
             onClick={() => setActiveFilter("active")}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
@@ -216,7 +208,6 @@ export default function PoolsContainer() {
             <option value="popularity">Popular</option>
             <option value="reward">Highest Reward</option>
             <option value="fee">Lowest Fee</option>
-            <option value="filling">Filling Fast</option>
           </select>
         </div>
       </div>

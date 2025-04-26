@@ -53,11 +53,12 @@ export default function PoolsList({
             return {
               ...pool,
               currentPlayers: pool.currentPlayers + 1,
+              potentialReward: pool.potentialReward + pool.entryFee,
               // If almost full, update status to filling
               status:
                 pool.currentPlayers + 1 >= pool.maxPlayers * 0.8 &&
                 pool.status === "open"
-                  ? "filling"
+                  ? "active"
                   : pool.status,
             };
           }
@@ -268,7 +269,6 @@ export default function PoolsList({
             <option value="popularity">Popular</option>
             <option value="reward">Highest Reward</option>
             <option value="fee">Lowest Fee</option>
-            <option value="filling">Filling Fast</option>
           </select>
         </div>
       </div>

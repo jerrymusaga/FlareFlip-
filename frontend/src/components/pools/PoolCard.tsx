@@ -118,14 +118,6 @@ export default function PoolCard({
             "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
           onClick: handleJoin,
         };
-      case "filling":
-        return {
-          text: "Almost Full!",
-          disabled: false,
-          className:
-            "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white",
-          onClick: handleJoin,
-        };
       case "active":
         return {
           text: "In Progress",
