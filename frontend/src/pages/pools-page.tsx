@@ -19,6 +19,7 @@ import { StakerInfo } from "../types/generated";
 import { usePools } from "../hooks/usePools";
 import { useStake, useCreatePool } from "../hooks/FlareFlipHooks";
 
+
 export default function GamingPoolsSection() {
   const { address, isConnected } = useAccount();
   const { joinPool, isPending: isJoiningPool } = useJoinPool();
@@ -31,7 +32,6 @@ export default function GamingPoolsSection() {
 
   useEffect(() => {
     setPools(pool);
-  }, [pool]);
 
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
     stakedAmount: 500,
@@ -89,15 +89,18 @@ export default function GamingPoolsSection() {
       if (!pool) {
         throw new Error("Pool not found");
       }
+
       const numericPoolId = Number(poolId);
 
       await joinPool(numericPoolId, pool.entryFee.toString());
+
 
       setPools((prevPools) =>
         prevPools.map((p) =>
           p.id === poolId ? { ...p, currentPlayers: p.currentPlayers + 1 } : p
         )
       );
+
     } catch (err) {
       console.error("Join pool error:", err);
       alert(
@@ -171,6 +174,7 @@ export default function GamingPoolsSection() {
         alert(`Minimum ${MINIMUM_STAKE} FLR staked required`);
         return;
       }
+
       const assetSymbol = newPool.asset.toUpperCase();
 
       console.log("Submitting:", {
