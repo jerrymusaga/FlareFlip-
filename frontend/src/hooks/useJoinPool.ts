@@ -1,4 +1,3 @@
-
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import flareFlipABI from "./ABI/FlareFlip.json";
 import { formatFigures } from "../utils/conversion";
@@ -24,12 +23,12 @@ export function useJoinPool() {
     }
   };
 
-  return { 
-    joinPool, 
-    hash, 
-    isPending, 
-    isLoading, 
-    isSuccess, 
-    error 
+  return {
+    joinPool,
+    hash,
+    isPending,
+    isLoading,
+    isSuccess,
+    error,
   };
 }
