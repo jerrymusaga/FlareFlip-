@@ -55,6 +55,7 @@ function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any
     maxPlayers: Number(contractPool[3]),
     currentPlayers: Number(contractPool[4]),
     status: getStatusFromEnum(contractPool[6]),
+    maxWinners: Number(contractPool[9]),
     potentialReward:parseFloat((Number(contractPool[5]) / 10**18).toFixed(2)),
     difficulty: "medium", 
     popularity: 5, 
