@@ -30,7 +30,7 @@ function App() {
         <Route index element={<LandingPage />} />
         <Route path="/howitworks" element={<HowItWorksPage />} />
         <Route path="/pools" element={<PoolsPage/>} />
-        <Route path="/playsection" element={<MinorityWinsGame />} />
+        <Route path="/playsection/:poolId" element={<MinorityWinsGame />} />
       </Route>
     )
   );

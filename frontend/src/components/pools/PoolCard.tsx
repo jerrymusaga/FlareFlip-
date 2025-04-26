@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Pool } from "../../types/generated";
 import { usePoolDetails, useUserPools } from "../../hooks/FlareFlipHooks";
 
@@ -11,7 +12,7 @@ interface PoolCardProps {
   onPlayPool?: (poolId: string) => Promise<void>;
 }
 
-export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: PoolCardProps) {
+export default function PoolCard({ pool, address, onJoinPool, onPlayPool }: PoolCardProps) {
   const [isJoining, setIsJoining] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const { userPoolIds } = useUserPools();
@@ -20,10 +21,10 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
     startPrice: 0,
     lastPrice: 0,
   });
+  const navigate = useNavigate();
 
   const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
  
-  console.log("userPoolIds", userPoolIds);
   useEffect(() => {
     if (detailedPool?.marketData) {
       setCurrentPrice({
@@ -47,16 +48,18 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
   };
 
   const handlePlay = async () => {
-    if (!onPlayPool) return;
-
     setIsPlaying(true);
     try {
-      await onPlayPool(pool.id);
+      if (onPlayPool) {
+        await onPlayPool(pool.id);
+      }
+      // Navigate to the play section with the poolId
+      navigate(`/playsection/${pool.id}`);
     } finally {
       setIsPlaying(false);
     }
   };
-  // Button logic based on pool status and user participation
+  
   const getButtonInfo = () => {
     // If user created this pool
     if (pool.creator === address) {
@@ -68,7 +71,6 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
       };
     }
 
-    // If user is part of this pool
     if (isUserInPool) {
       // If pool is active and user is in pool, show Play button
       if (pool.status === "active") {
@@ -80,7 +82,6 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
           onClick: handlePlay,
         };
       } else {
-        // If pool is not active but user is in pool
         return {
           text: "You've Joined",
           disabled: true,
@@ -89,8 +90,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
         };
       }
     }
-
-    // Standard pool status checks
+  
     switch (pool.status) {
       case "open":
         return {
@@ -176,7 +176,7 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
               </p>
             </div>
           </div>
-          {/* price fee, current price and last price */}
+          
           <div className="bg-indigo-800/20 rounded-xl p-3">
             <p className="text-xs text-indigo-400 mb-1">Prize Pool</p>
             <div className="flex items-center gap-1">
@@ -237,8 +237,8 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
       {/* Action Button */}
       <div className="px-6 pb-6">
         <button
-          onClick={handleJoin}
-          disabled={buttonInfo.disabled || isJoining}
+          onClick={buttonInfo.onClick}
+          disabled={buttonInfo.disabled}
           className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 ${buttonInfo.className}`}
         >
           {buttonInfo.text}
