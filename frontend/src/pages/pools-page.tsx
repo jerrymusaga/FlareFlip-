@@ -18,7 +18,7 @@ import { Pool } from "../types/generated";
 import { StakerInfo } from "../types/generated";
 import { usePools } from "../hooks/usePools";
 import { useStake, useCreatePool } from "../hooks/FlareFlipHooks";
-// Types
+
 
 export default function GamingPoolsSection() {
   const { address, isConnected } = useAccount();
@@ -32,7 +32,6 @@ export default function GamingPoolsSection() {
 
   useEffect(() => {
     setPools(pool);
-  }, [pools]);
 
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
     stakedAmount: 500,
@@ -86,25 +85,22 @@ export default function GamingPoolsSection() {
     try {
       setAnimatingPoolId(poolId);
 
-      // Find the pool to get its entry fee
       const pool = pools.find((p) => p.id === poolId);
       if (!pool) {
         throw new Error("Pool not found");
       }
 
-      // Convert poolId to number (assuming your contract uses uint256 for poolId)
       const numericPoolId = Number(poolId);
 
       await joinPool(numericPoolId, pool.entryFee.toString());
 
-      // Update UI state after successful join
+
       setPools((prevPools) =>
         prevPools.map((p) =>
           p.id === poolId ? { ...p, currentPlayers: p.currentPlayers + 1 } : p
         )
       );
 
-      alert(`Successfully joined pool ${poolId}`);
     } catch (err) {
       console.error("Join pool error:", err);
       alert(
@@ -169,20 +165,16 @@ export default function GamingPoolsSection() {
 
   const handleCreatePool = async () => {
     try {
-      // Validate inputs
       if (newPool.entryFee <= 0 || newPool.maxPlayers <= 1) {
         alert("Entry fee must be > 0 and max players > 1");
         return;
       }
-
-      // Check staker requirements
       const MINIMUM_STAKE = 100;
       if (stakerInfo.stakedAmount < MINIMUM_STAKE) {
         alert(`Minimum ${MINIMUM_STAKE} FLR staked required`);
         return;
       }
 
-      // Convert to uppercase to match contract
       const assetSymbol = newPool.asset.toUpperCase();
 
       console.log("Submitting:", {
@@ -241,20 +233,7 @@ export default function GamingPoolsSection() {
   };
 
   // Get difficulty color
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "text-green-500";
-      case "medium":
-        return "text-yellow-500";
-      case "hard":
-        return "text-orange-500";
-      case "expert":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
+ 
 
   // Format timestamp to date
   const formatTimestamp = (timestamp: number) => {
