@@ -2,7 +2,6 @@
 import { Pool } from "../types/generated";
 import { useReadContracts, useReadContract} from "wagmi";
 import flareFlipABI from "./ABI/FlareFlip.json";
-import { formatFigures } from "../utils/conversion";
 import { CONTRACT_ADDRESS } from "./ABI/address";
 
 
@@ -43,7 +42,7 @@ export function usePools() {
   return { pool, };
 }
 
-// Helper to map contract data to frontend Pool type
+
 function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any): Pool {
   console.log("result", result);
     console.log("contractPool", contractPool);
@@ -66,9 +65,9 @@ function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any
 function getStatusFromEnum(status: number): "open" | "filling" | "active" | "completed" {
   switch(status) {
     case 0: return "open";
-    case 1: return "filling";
-    case 2: return "active";
-    case 3: return "completed";
+    case 1: return "active";
+    case 2: return "completed";
+    case 3: return "filling";
     default: return "open";
   }
 }

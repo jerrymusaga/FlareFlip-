@@ -3,6 +3,7 @@ import HowItWorksPage from "./pages/how-to-play";
 import "@rainbow-me/rainbowkit/styles.css";
 import GamingPoolsSection from "./pages/pools-page";
 import MinorityWinsGame from "./pages/playgame-page";
+import PoolsPage from "./pages/pools";
 import {
   RouterProvider,
   createBrowserRouter,
@@ -28,7 +29,7 @@ function App() {
       <Route path="/" element={<Root />}>
         <Route index element={<LandingPage />} />
         <Route path="/howitworks" element={<HowItWorksPage />} />
-        <Route path="/pools" element={<GamingPoolsSection />} />
+        <Route path="/pools" element={<PoolsPage/>} />
         <Route path="/playsection" element={<MinorityWinsGame />} />
       </Route>
     )
