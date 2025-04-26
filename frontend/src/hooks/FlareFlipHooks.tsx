@@ -2,6 +2,7 @@ import {
   useAccount,
   useReadContract,
   useWriteContract,
+  useReadContracts,
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { parseEther } from "viem";
@@ -62,22 +63,68 @@ export function usePoolCount() {
 
 export function useUserPools() {
   const { address } = useAccount();
-
+  const [userPoolIds, setUserPoolIds] = useState<bigint[]>([]);
+  
+  // Fetch staker info
   const {
-    data: userPoolIds,
-    isError,
-    isLoading,
+    data: stakerInfo,
+    isLoading: stakerLoading,
+    error: stakerError
   } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
-    functionName: "userPools",
-    args: [address!],
+    functionName: "stakers",
+    args: [address],
     query: {
-      enabled: !!address,
+      enabled: !!address, // Only fetch if address exists
     },
   });
 
-  return { userPoolIds: (userPoolIds as bigint[]) || [], isError, isLoading };
+  // Calculate active pools count
+  const activePoolsCount = stakerInfo ? (stakerInfo as any)[1] : BigInt(0);
+  
+  // Create batch requests for all user pools
+  const poolRequests = Array.from(
+    { length: Number(activePoolsCount) }, 
+    (_, i) => ({
+      address: CONTRACT_ADDRESS,
+      abi: flareFlipABI.abi,
+      functionName: 'userPools',
+      args: [address, BigInt(i)],
+    })
+  );
+
+  // Fetch all pool IDs in a single batch
+  const {
+    data: poolIds,
+    isLoading: poolsLoading,
+    error: poolsError
+  } = useReadContracts({
+    contracts: poolRequests,
+    query: {
+      enabled: !!address && activePoolsCount > 0,
+    },
+  });
+
+  // Update userPoolIds when data is fetched
+  useEffect(() => {
+    if (poolIds && poolIds.length > 0) {
+      // Extract result values and filter out any undefined values
+      const ids = poolIds
+        .map(result => result.result)
+        .filter(id => id !== undefined) as bigint[];
+      
+      setUserPoolIds(ids);
+    } else if (poolIds && poolIds.length === 0 && activePoolsCount === BigInt(0)) {
+      setUserPoolIds([]);
+    }
+  }, [poolIds, activePoolsCount]);
+
+  const isLoading = stakerLoading || poolsLoading;
+  const isError = !!stakerError || !!poolsError;
+   
+  console.log("User Pool IDs:", userPoolIds);
+  return { userPoolIds, isLoading, isError };
 }
 
 // Hook to get pool details
