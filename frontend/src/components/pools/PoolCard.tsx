@@ -1,28 +1,38 @@
 import { useState, useEffect } from "react";
 import { Pool } from "../../types/generated";
-import { usePoolDetails } from "../../hooks/FlareFlipHooks";
-import {
-  Trophy,
-  Users,
-  Coins,
-  Zap,
-  DollarSign,
-} from "lucide-react";
+import { usePoolDetails, useUserPools } from "../../hooks/FlareFlipHooks";
+
+import { Trophy, Users, Coins, Zap, DollarSign } from "lucide-react";
 
 interface PoolCardProps {
   pool: Pool;
   address?: `0x${string}` | string;
   onJoinPool: (poolId: string) => Promise<void>;
+  onPlayPool?: (poolId: string) => Promise<void>;
 }
 
-export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
+export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: PoolCardProps) {
   const [isJoining, setIsJoining] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const { userPoolIds } = useUserPools();
   const { pool: detailedPool } = usePoolDetails(BigInt(pool.id));
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [AssetPrice, setCurrentPrice] = useState({
+    startPrice: 0,
+    lastPrice: 0,
+  });
+
+  const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
 
   useEffect(() => {
     if (detailedPool?.marketData) {
-      setCurrentPrice(Number(detailedPool.marketData.lastPrice));
+      setCurrentPrice({
+        startPrice: parseFloat(
+          (Number(detailedPool.marketData.startPrice) / 10 ** 18).toFixed(2)
+        ),
+        lastPrice: parseFloat(
+          (Number(detailedPool.marketData.lastPrice) / 10 ** 18).toFixed(2)
+        ),
+      });
     }
   }, [detailedPool]);
 
@@ -35,24 +45,51 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
     }
   };
 
+  const handlePlay = async () => {
+    if (!onPlayPool) return;
+
+    setIsPlaying(true);
+    try {
+      await onPlayPool(pool.id);
+    } finally {
+      setIsPlaying(false);
+    }
+  };
   // Button logic based on pool status and user participation
   const getButtonInfo = () => {
+    // If user created this pool
     if (pool.creator === address) {
       return {
         text: "Your Pool",
         disabled: true,
         className: "bg-purple-500/10 text-purple-400",
+        onClick: () => {},
       };
     }
-    
-    if (pool.creator && address && pool.participants && pool.participants.includes(address)) {
-      return {
-        text: "Active",
-        disabled: true,
-        className: "bg-blue-100 text-blue-600",
-      };
+
+    // If user is part of this pool
+    if (isUserInPool) {
+      // If pool is active and user is in pool, show Play button
+      if (pool.status === "active") {
+        return {
+          text: isPlaying ? "Playing..." : "Play Now",
+          disabled: isPlaying,
+          className:
+            "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white",
+          onClick: handlePlay,
+        };
+      } else {
+        // If pool is not active but user is in pool
+        return {
+          text: "You've Joined",
+          disabled: true,
+          className: "bg-blue-100 text-blue-600",
+          onClick: () => {},
+        };
+      }
     }
-    
+
+    // Standard pool status checks
     switch (pool.status) {
       case "open":
         return {
@@ -60,6 +97,7 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
           disabled: isJoining,
           className:
             "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
+          onClick: handleJoin,
         };
       case "filling":
         return {
@@ -67,18 +105,21 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
           disabled: false,
           className:
             "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white",
+          onClick: handleJoin,
         };
       case "active":
         return {
           text: "In Progress",
           disabled: true,
           className: "bg-blue-100 text-blue-600 cursor-not-allowed",
+          onClick: () => {},
         };
       case "completed":
         return {
           text: "Completed",
           disabled: true,
           className: "bg-gray-100 text-gray-500 cursor-not-allowed",
+          onClick: () => {},
         };
       default:
         return {
@@ -86,23 +127,11 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
           disabled: false,
           className:
             "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white",
+          onClick: handleJoin,
         };
     }
   };
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "text-green-500";
-      case "medium":
-        return "text-yellow-500";
-      case "hard":
-        return "text-orange-500";
-      case "expert":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
+
   const buttonInfo = getButtonInfo();
 
   return (
@@ -111,7 +140,9 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
       <div className="relative p-6 pb-4">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-bold text-white">{pool.asset}</h3>
+            <h3 className="text-xl font-bold text-white">
+              {pool.asset} / {"USD"}
+            </h3>
             <p className="text-indigo-400 text-sm">Pool #{pool.id}</p>
           </div>
           <div className="bg-indigo-900/50 px-3 py-1 rounded-lg border border-indigo-700/30">
@@ -138,17 +169,17 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
           <div className="bg-indigo-800/20 rounded-xl p-3">
             <p className="text-xs text-indigo-400 mb-1">Starting price</p>
             <div className="flex items-center gap-1">
-              <Trophy size={16} className="text-amber-400" />
+              <DollarSign size={16} className="text-amber-400" />
               <p className="text-lg font-bold text-white">
-              {currentPrice} {  "USD"}
+                {AssetPrice.startPrice} {"USD"}
               </p>
             </div>
           </div>
           {/* price fee, current price and last price */}
           <div className="bg-indigo-800/20 rounded-xl p-3">
-            <p className="text-xs text-indigo-400 mb-1">Reward</p>
+            <p className="text-xs text-indigo-400 mb-1">Prize Pool</p>
             <div className="flex items-center gap-1">
-              <DollarSign size={16} className="text-amber-400" />
+              <Trophy size={16} className="text-amber-400" />
               <p className="text-lg font-bold text-white">
                 {pool.potentialReward} {pool.feeToken}
               </p>
@@ -159,7 +190,7 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
             <div className="flex items-center gap-1">
               <DollarSign size={16} className="text-amber-400" />
               <p className="text-lg font-bold text-white">
-                {pool.potentialReward} {pool.feeToken}
+                {AssetPrice.lastPrice} {"USD"}
               </p>
             </div>
           </div>
@@ -183,25 +214,13 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
                 width: `${(pool.currentPlayers / pool.maxPlayers) * 100}%`,
               }}
             ></div>
-
-            {currentPrice && (
-              <div className="bg-indigo-800/20 rounded-xl p-3">
-                <p className="text-xs text-indigo-400 mb-1">Current Price</p>
-                <p className="text-lg font-bold text-white">
-                  {currentPrice} {pool.feeToken || "USD"}
-                </p>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Zap size={16} className={getDifficultyColor(pool.difficulty)} />
-              <span
-                className={`text-sm ${getDifficultyColor(pool.difficulty)}`}
-              >
-                {pool.difficulty.charAt(0).toUpperCase() +
-                  pool.difficulty.slice(1)}
+              <Zap size={16} className="text-yellow-500" />
+              <span className="text-sm text-indigo-300">
+                MaxWiners : {pool.maxWinners}
               </span>
             </div>
 
@@ -213,8 +232,6 @@ export default function PoolCard({ pool, address, onJoinPool }: PoolCardProps) {
           </div>
         </div>
       </div>
-
-
 
       {/* Action Button */}
       <div className="px-6 pb-6">

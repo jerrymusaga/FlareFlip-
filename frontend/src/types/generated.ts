@@ -10,6 +10,7 @@ export interface Pool {
   currentPlayers: number;
   status: 'open' | 'filling' | 'active' | 'completed';
   timeRemaining?: number;
+  maxWinners: number;
   potentialReward: number;
   difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   popularity: number; // 1-10 scale
