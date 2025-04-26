@@ -22,7 +22,8 @@ export default function PoolCard({ pool, address, onJoinPool, onPlayPool  }: Poo
   });
 
   const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
-
+ 
+  console.log("userPoolIds", userPoolIds);
   useEffect(() => {
     if (detailedPool?.marketData) {
       setCurrentPrice({

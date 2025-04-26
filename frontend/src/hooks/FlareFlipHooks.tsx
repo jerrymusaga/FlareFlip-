@@ -96,7 +96,6 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
       enabled: poolId !== undefined,
     },
   });
-  console.log("Pool Data", poolData);
 
   // Get trading pair info
   const { data: tradingPair } = useReadContract({
