@@ -1,11 +1,14 @@
+import { useQueryClient } from "@tanstack/react-query";
+
 import { useState, useEffect, useCallback } from "react";
-import { Coins, Flame, Plus, Users } from "lucide-react";
+import { Coins, Flame, Plus, Users, Zap } from "lucide-react";
 import { useAccount } from "wagmi";
 import { Pool, StakerInfo } from "../../types/generated";
 import PoolCard from "./PoolCard";
 import { useJoinPool } from "../../hooks/useJoinPool";
 import { toast } from "sonner";
 import { usePoolEvents } from "../../hooks/usePoolEvents";
+import { CONTRACT_ADDRESS } from "../../hooks/ABI/address";
 
 interface PoolsListProps {
   pools: Pool[];
@@ -24,6 +27,7 @@ export default function PoolsList({
   onShowStakingModal,
   onShowCreateModal,
 }: PoolsListProps) {
+  const queryClient = useQueryClient();
   const { address } = useAccount();
   const { joinPool, isPending: isJoiningPool } = useJoinPool();
 
@@ -50,17 +54,77 @@ export default function PoolsList({
       setPools((prevPools) =>
         prevPools.map((pool) => {
           if (pool.id === poolId.toString()) {
-            return {
+            // Check if this join will fill the pool to maximum capacity
+            const newPlayerCount = pool.currentPlayers + 1;
+            const willBecomeFull = newPlayerCount >= pool.maxPlayers;
+            const isAlmostFull = newPlayerCount >= pool.maxPlayers * 0.8;
+
+            // Determine the new status
+            let newStatus = pool.status;
+            if (willBecomeFull) {
+              newStatus = "active";
+            } else if (isAlmostFull && pool.status === "open") {
+              newStatus = "active";
+            }
+
+            // Calculate new potential reward by adding entry fee
+            const newPotentialReward = pool.potentialReward + pool.entryFee;
+
+            // Create updated pool object
+            const updatedPool = {
               ...pool,
-              currentPlayers: pool.currentPlayers + 1,
-              potentialReward: pool.potentialReward + pool.entryFee,
-              // If almost full, update status to filling
-              status:
-                pool.currentPlayers + 1 >= pool.maxPlayers * 0.8 &&
-                pool.status === "open"
-                  ? "active"
-                  : pool.status,
+              currentPlayers: newPlayerCount,
+              potentialReward: newPotentialReward,
+              status: newStatus,
             };
+
+            // If the pool status transitions to active, handle market data updates
+            if (newStatus === "active" && pool.status !== "active") {
+              // Immediately force a refresh of market data from blockchain
+              queryClient.invalidateQueries({
+                queryKey: [
+                  "wagmi.readContract",
+                  {
+                    address: CONTRACT_ADDRESS,
+                    functionName: "poolMarketData",
+                    args: [BigInt(poolId)],
+                  },
+                ],
+              });
+
+              // Show toast notification that the pool is now active with a colorful design
+              toast.custom(
+                (t) => (
+                  <div
+                    className={`${
+                      t ? "animate-enter" : "animate-leave"
+                    } max-w-md w-full bg-gradient-to-r from-indigo-900 to-purple-900 shadow-lg rounded-lg pointer-events-auto border border-indigo-500`}
+                  >
+                    <div className="p-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 pt-0.5">
+                          <Zap
+                            size={24}
+                            className="text-yellow-400 animate-pulse"
+                          />
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <p className="text-sm font-medium text-white">
+                            Pool #{poolId} is now active!
+                          </p>
+                          <p className="mt-1 text-sm text-indigo-200">
+                            Trading has begun. Market prices are now available!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ),
+                { duration: 4000 }
+              );
+            }
+
+            return updatedPool;
           }
           return pool;
         })
@@ -86,7 +150,7 @@ export default function PoolsList({
         });
       }, 4000);
     },
-    [address]
+    [address, queryClient]
   );
 
   // Setup event listener using the custom hook
