@@ -44,9 +44,6 @@ export function usePools() {
 
 
 function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any): Pool {
-
-  console.log("result", result);
-  console.log("contractPool", contractPool);
   return {
     id: id.toString(),
     asset: contractPool[0],

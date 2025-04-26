@@ -15,7 +15,7 @@ export default function CreatePoolModal({
   if (!showCreatePoolModal) return null;
 
   const assetOptions: AssetOption[] = [
-    { name: "ETH", value: 1 },  // Example - use exact symbol from contract
+    { name: "ETH", value: 1 },  
     { name: "BTC", value: 2 },
     { name: "FLR", value: 3 },
     { name: "XRP", value: 4 },

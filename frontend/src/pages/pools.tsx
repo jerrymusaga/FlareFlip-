@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useBalance, useAccount } from "wagmi";
-import { Flame, Coins, Plus } from "lucide-react";
 import { useStake, useCreatePool } from "../hooks/FlareFlipHooks";
 import CreatePoolModal from "../components/modals/CreatePoolModal";
 import StakingModal from "../components/modals/StakingModal";
@@ -12,7 +11,7 @@ export default function PoolsPage() {
   const { address, isConnected } = useAccount();
   const { stake } = useStake();
   const { createPool, isPending: isCreatingPool } = useCreatePool();
-  const { pool: poolsData } = usePools(); // Get pools data from hook
+  const { pool: poolsData } = usePools(); 
   
   // Store pools data
   const [pools, setPools] = useState<Pool[]>([]);
@@ -20,9 +19,13 @@ export default function PoolsPage() {
   // Load pools data when available
   useEffect(() => {
     if (poolsData && poolsData.length > 0) {
-      setPools(poolsData);
+      // Only update if the data is actually different
+      const isEqual = JSON.stringify(pools) === JSON.stringify(poolsData);
+      if (!isEqual) {
+        setPools(poolsData);
+      }
     }
-  }, [poolsData]);
+  }, [poolsData, pools]);
 
   // Staking state
   const [stakerInfo, setStakerInfo] = useState<StakerInfo>({
