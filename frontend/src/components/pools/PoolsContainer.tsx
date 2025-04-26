@@ -1,73 +1,102 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Pool } from "../../types/generated";
 import PoolCard from "./PoolCard";
 import { useJoinPool } from "../../hooks/useJoinPool";
 import { useAccount } from "wagmi";
 import { usePools } from "../../hooks/usePools";
-
+import { toast } from "sonner";
+import { usePoolEvents } from "../../hooks/usePoolEvents";
 
 export default function PoolsContainer() {
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
   const { joinPool, isPending: isJoiningPool } = useJoinPool();
-  const { pool } = usePools(); // Your existing hook to get pools data
-  
+  const { pool } = usePools(); // Hook to get pools data
+
   const [pools, setPools] = useState<Pool[]>([]);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("popularity");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [visiblePools, setVisiblePools] = useState<number>(6);
-  const [animatingPoolId, setAnimatingPoolId] = useState<string | null>(null);
+  const [recentlyJoinedPools, setRecentlyJoinedPools] = useState<Set<string>>(
+    new Set()
+  );
 
+  // Initialize pools from the hook data
   useEffect(() => {
-    setPools(pool);
+    if (pool && pool.length > 0) {
+      setPools(pool);
+    }
   }, [pool]);
+
+  // Handle player joined event
+  const handlePlayerJoined = useCallback(
+    (poolId: bigint, player: string) => {
+      // Update the pools state when a player joins
+      setPools((prevPools) =>
+        prevPools.map((pool) => {
+          if (pool.id === poolId.toString()) {
+            return {
+              ...pool,
+              currentPlayers: pool.currentPlayers + 1,
+              // If almost full, update status to filling
+              status:
+                pool.currentPlayers + 1 >= pool.maxPlayers * 0.8 &&
+                pool.status === "open"
+                  ? "filling"
+                  : pool.status,
+            };
+          }
+          return pool;
+        })
+      );
+
+      // Add to recently joined set for animation if the current user joined
+      if (address && player.toLowerCase() === address.toLowerCase()) {
+        setRecentlyJoinedPools((prev) => new Set([...prev, poolId.toString()]));
+
+        // Show success toast for current user
+        toast.success(`You've joined Pool #${poolId}!`);
+      } else {
+        // Show info toast for other users
+        toast.info(`New player joined Pool #${poolId}`);
+      }
+
+      // Remove pool from recently joined after animation completes (4 seconds)
+      setTimeout(() => {
+        setRecentlyJoinedPools((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(poolId.toString());
+          return newSet;
+        });
+      }, 4000);
+    },
+    [address]
+  );
+
+  // Setup event listener using the custom hook
+  usePoolEvents({ onPlayerJoined: handlePlayerJoined });
 
   // Handle joining a pool
   const handleJoinPool = async (poolId: string) => {
     try {
-      setAnimatingPoolId(poolId);
-
       const pool = pools.find((p) => p.id === poolId);
       if (!pool) {
         throw new Error("Pool not found");
       }
-      const numericPoolId = Number(poolId);
 
-      await joinPool(numericPoolId, pool.entryFee.toString());
+      await joinPool(Number(poolId), pool.entryFee.toString());
 
-      setPools((prevPools) =>
-        prevPools.map((p) =>
-          p.id === poolId ? { ...p, currentPlayers: p.currentPlayers + 1 } : p
-        )
-      );
+      // Note: We don't need to update the state here because
+      // the event listener will handle that when the blockchain event is emitted
     } catch (err) {
       console.error("Join pool error:", err);
-      alert(
+      toast.error(
         `Failed to join pool: ${
           err instanceof Error ? err.message : "Unknown error"
         }`
       );
-    } finally {
-      setAnimatingPoolId(null);
     }
   };
-
-  // Get difficulty color
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "text-green-500";
-      case "medium":
-        return "text-yellow-500";
-      case "hard":
-        return "text-orange-500";
-      case "expert":
-        return "text-red-500";
-      default:
-        return "text-gray-500";
-    }
-  };
-
 
   // Filter, sort and search pools
   const filteredPools = pools
@@ -101,27 +130,7 @@ export default function PoolsContainer() {
       }
     });
 
-  // Simulate time decreasing for active pools
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPools((prevPools) =>
-        prevPools.map((pool) => {
-          if (pool.status === "active" && pool.timeRemaining) {
-            const newTime = pool.timeRemaining - 1;
-            if (newTime <= 0) {
-              return { ...pool, status: "completed", timeRemaining: undefined };
-            }
-            return { ...pool, timeRemaining: newTime };
-          }
-          return pool;
-        })
-      );
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Simulate loading more pools
+  // Load more pools
   const loadMorePools = () => {
     if (visiblePools < filteredPools.length) {
       setVisiblePools((prev) => Math.min(prev + 6, filteredPools.length));
@@ -219,10 +228,8 @@ export default function PoolsContainer() {
             key={pool.id}
             pool={pool}
             address={address as `0x${string}` | undefined}
-            animatingPoolId={animatingPoolId}
-            isJoiningPool={isJoiningPool}
             onJoinPool={handleJoinPool}
-            getDifficultyColor={getDifficultyColor}
+            isRecentlyJoined={recentlyJoinedPools.has(pool.id)}
           />
         ))}
       </div>
