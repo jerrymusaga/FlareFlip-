@@ -41,9 +41,11 @@ export function usePools() {
   return { pool };
 }
 
-
-
-function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any): Pool {
+function mapContractPoolToFrontendPool(
+  contractPool: any,
+  id: number,
+  result: any
+): Pool {
   return {
     id: id.toString(),
     asset: contractPool[0],
@@ -55,22 +57,26 @@ function mapContractPoolToFrontendPool(contractPool: any, id: number, result:any
     status: getStatusFromEnum(contractPool[6]),
 
     maxWinners: Number(contractPool[9]),
-    potentialReward:parseFloat((Number(contractPool[5]) / 10**18).toFixed(2)),
-    difficulty: "medium", 
-    popularity: 5, 
+    potentialReward: parseFloat(
+      (Number(contractPool[5]) / 10 ** 18).toFixed(2)
+    ),
+    difficulty: "medium",
+    popularity: 5,
 
     creator: contractPool[7],
   };
 }
 
-function getStatusFromEnum(status: number): "open" | "filling" | "active" | "completed" {
-  switch(status) {
-    case 0: return "open";
-    case 1: return "active";
-    case 2: return "completed";
-    case 3: return "filling";
-    default: return "open";
-
+function getStatusFromEnum(status: number): "open" | "active" | "completed" {
+  switch (status) {
+    case 0:
+      return "open";
+    case 1:
+      return "active";
+    case 2:
+      return "completed";
+    default:
+      return "open";
   }
 }
 
