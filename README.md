@@ -222,7 +222,10 @@ constructor() Ownable(msg.sender) {
 
 ## 🎮 User Journey
 
-![Game Flow Diagram]
+### 0. Scouting Pools
+
+![all pools](screenshots/allpools.jpg)
+Jordan heard about the viral **minority** prediction game on Flare blockchain network and decided to visit the platform. She saw the pools and noticed how the price of each pool based on crypto asset was updating. She went through How to Play section, understood the flow and decided to leverage the benefit and became a staker.
 
 ### 1. Pool Creation
 
