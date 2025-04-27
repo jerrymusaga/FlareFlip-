@@ -36,14 +36,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
     query: { enabled: poolId !== undefined },
   });
 
-  // Get participants
-  const { data: participants } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: flareFlipABI.abi,
-    functionName: "getPoolParticipants",
-    args: [BigInt(poolId || 0)],
-    query: { enabled: poolId !== undefined },
-  });
+  
 
   useEffect(() => {
     if (poolId === undefined) {
@@ -51,7 +44,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
       return;
     }
 
-    if (poolData && tradingPair && marketData && participants) {
+    if (poolData && tradingPair && marketData ) {
       try {
         const formattedPool: Pool = {
           id: Number(poolId),
@@ -59,7 +52,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
           maxPlayers: Number(poolData[1]),
           currentPlayers: Number(poolData[2]),
           potentialReward: Number(poolData[3]),
-          status: poolData[4] as PoolStatus,
+          status: poolData[6] as PoolStatus,
           feeToken: "FLR",
           asset: tradingPair[0] as string,
           creator: poolData[5] as `0x${string}`,
@@ -82,7 +75,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
         setIsLoading(false);
       }
     }
-  }, [poolId, poolData, tradingPair, marketData, participants]);
-
-  return { pool, isLoading, error };
+  }, [poolId, poolData, tradingPair, marketData]);
+  console.log("poolData", poolData,);
+  return { pool,poolData, isLoading, error, marketData};
 }

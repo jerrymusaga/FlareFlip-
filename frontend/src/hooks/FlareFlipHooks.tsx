@@ -11,9 +11,9 @@ import flareFlipABI from "./ABI/FlareFlip.json";
 import { CONTRACT_ADDRESS } from "./ABI/address";
 
 export enum PlayerChoice {
-  NONE = 0,
-  HEADS = 1,
-  TAILS = 2,
+  NONE,
+  HEADS,
+  TAILS
 }
 
 export enum PoolStatus {
@@ -123,7 +123,6 @@ export function useUserPools() {
   const isLoading = stakerLoading || poolsLoading;
   const isError = !!stakerError || !!poolsError;
    
-  console.log("User Pool IDs:", userPoolIds);
   return { userPoolIds, isLoading, isError };
 }
 
@@ -133,7 +132,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Get basic pool info
+
   const { data: poolData } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
@@ -144,7 +143,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
     },
   });
 
-  // Get trading pair info
+
   const { data: tradingPair } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
@@ -155,7 +154,8 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
     },
   });
 
-  // Get market data
+
+
   const { data: marketData } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
@@ -166,6 +166,7 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
     },
   });
 
+  
   useEffect(() => {
     if (poolId === undefined) {
       setIsLoading(false);
@@ -201,37 +202,9 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
     }
   }, [poolId, poolData, tradingPair, marketData]);
 
-  return { pool, isLoading, error };
+  return { pool,poolData, isLoading, error };
 }
 
-// Hook to check if user is a player in a pool
-export function usePlayerInfo(
-  poolId: number | bigint | undefined,
-  playerAddress?: `0x${string}`
-) {
-  const { address } = useAccount();
-  const addressToCheck = playerAddress || address;
-
-  const {
-    data: playerInfo,
-    isError,
-    isLoading,
-  } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: flareFlipABI.abi,
-    functionName: "players", // Make sure this matches your contract getter method
-    args: [BigInt(poolId || 0), addressToCheck!],
-    query: {
-      enabled: !!poolId && !!addressToCheck,
-    },
-  });
-
-  return {
-    playerInfo: playerInfo as PlayerInfo | undefined,
-    isError,
-    isLoading,
-  };
-}
 
 // Hook to get supported assets
 interface UseSupportedAssetsResult {
@@ -445,7 +418,7 @@ export function useMakeSelection() {
       address: CONTRACT_ADDRESS,
       abi: flareFlipABI.abi,
       functionName: "makeSelection",
-      args: [BigInt(poolId), BigInt(choice)],
+      args: [BigInt(poolId), choice], // Don't convert choice to BigInt
     });
   };
 
