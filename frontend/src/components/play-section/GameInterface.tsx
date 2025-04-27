@@ -15,8 +15,8 @@ interface GameInterfaceProps {
   isLoading: boolean;
   currentRound: number;
   poolId: string;
-  winners?: string[]; // Add winners prop
-  losers?: string[]; // Add losers prop
+  winners?: string[];
+  losers?: string[];
 }
 
 export function GameInterface({
@@ -46,11 +46,10 @@ export function GameInterface({
   const [showTieBreakerAnimation, setShowTieBreakerAnimation] = useState(false);
   const [tieBreakerStep, setTieBreakerStep] = useState<number>(0);
 
-  // Listen for RoundCompleted events to track winners/losers
+  // Listen for RoundCompleted events
   useEffect(() => {
     const roundEventName = `RoundCompleted-${poolId}-${currentRound}`;
     const handler = (e: CustomEvent) => {
-      const event = e as CustomEvent;
       const { startPrice, lastPrice, randomValue, winningSelection } =
         event.detail;
       const { winningChoice } = e.detail;
@@ -67,7 +66,7 @@ export function GameInterface({
       window.removeEventListener(roundEventName, handler as EventListener);
   }, [poolId, currentRound]);
 
-  // Enhanced Tie Breaker listener with animation steps
+  // Enhanced Tie Breaker listener with 30-second display
   useEffect(() => {
     const tieEventName = `TieBrokenByHybrid-${poolId}-${currentRound}`;
     const handler = (e: CustomEvent) => {
@@ -105,12 +104,12 @@ export function GameInterface({
         setIsTieBreaker(true);
       }, 6000);
 
-      // Hide after 10 seconds
+      // Hide after 30 seconds (changed from 10 to 30)
       setTimeout(() => {
         setShowTieBreakerAnimation(false);
         setIsTieBreaker(false);
         setTieBreakerStep(0);
-      }, 10000);
+      }, 30000); // 30,000ms = 30 seconds
     };
 
     window.addEventListener(tieEventName, handler as EventListener);
@@ -145,82 +144,6 @@ export function GameInterface({
     gameStatus === "revealing" && selectedOption !== null;
   const shouldShowResults = showRoundResult && currentResult;
 
-  // Tie breaker animation steps
-  const renderTieBreakerStep = () => {
-    switch (tieBreakerStep) {
-      case 1:
-        return (
-          <div className="tie-message text-center py-4">
-            <h3 className="text-xl font-bold text-yellow-400">TIE DETECTED!</h3>
-            <p className="text-gray-300">Resolving with hybrid method...</p>
-          </div>
-        );
-      case 2:
-        return (
-          tieBreakerDetails && (
-            <div className="price-comparison text-center py-4">
-              <h4 className="text-lg font-semibold text-white">
-                Price Movement
-              </h4>
-              <div className="price-change flex justify-center items-center gap-4 mt-2">
-                <span className="text-gray-300">
-                  Start: {tieBreakerDetails.startPrice}
-                </span>
-                <ArrowRight className="text-gray-400" />
-                <span className="text-gray-300">
-                  End: {tieBreakerDetails.lastPrice}
-                </span>
-              </div>
-              <div className="votes mt-4">
-                <p className="text-gray-400">Votes:</p>
-                <div className="flex justify-center gap-8 mt-2">
-                  <span className="text-yellow-400">
-                    HEADS: {tieBreakerDetails.headsCount}
-                  </span>
-                  <span className="text-blue-400">
-                    TAILS: {tieBreakerDetails.tailsCount}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )
-        );
-      case 3:
-        return (
-          tieBreakerDetails && (
-            <div className="random-number text-center py-4">
-              <h4 className="text-lg font-semibold text-white">
-                Random Number Generated
-              </h4>
-              <div className="random-value bg-gray-800 rounded-lg p-3 mt-2">
-                <span className="font-mono text-xl">
-                  {tieBreakerDetails.randomValue}
-                </span>
-              </div>
-            </div>
-          )
-        );
-      case 4:
-        return (
-          tieBreakerDetails && (
-            <div className="final-decision text-center py-4">
-              <h4 className="text-lg font-semibold text-green-400">
-                TIE BROKEN!
-              </h4>
-              <p className="text-white mt-2">
-                Winning choice:{" "}
-                <span className="font-bold">
-                  {tieBreakerDetails.winningChoice}
-                </span>
-              </p>
-            </div>
-          )
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="game-interface flex flex-col items-center justify-center gap-6 p-4 relative">
       {/* Round indicator */}
@@ -229,7 +152,7 @@ export function GameInterface({
         {winners.length > 0 && `- ${winners.length} players advanced`}
       </div>
 
-      {/* Tie Breaker Animation */}
+      {/* Tie Breaker Overlay - Now stays for 30 seconds */}
       {isTieBreaker && tieBreakerDetails && (
         <div className="tie-breaker-overlay fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
           <div className="tie-breaker-content bg-gray-800 rounded-xl p-6 max-w-md w-full">
@@ -456,4 +379,3 @@ export function GameInterface({
     </div>
   );
 }
-
