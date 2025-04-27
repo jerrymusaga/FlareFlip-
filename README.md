@@ -265,8 +265,6 @@ Alex discovers Jordan's prediction pool and decides to participate:
 
 ### 3. Making Predictions
 
-![Prediction Interface]
-
 Once the pool is full with 20 participants, the game begins:
 
 - All players, including Alex, choose either HEADS or TAILS
@@ -277,6 +275,8 @@ Once the pool is full with 20 participants, the game begins:
 ```
 "The minority wins mechanism makes this game so much more strategic than regular prediction games. I need to anticipate what others will choose, not just predict price movements or make random guesses."
 ```
+
+![Prediction Interface](screenshots/playsection.png)
 
 ### 4. Round Resolution
 
