@@ -22,10 +22,12 @@ contract DeployFlareFlip is Script {
         flareFlip.addSupportedAsset(1, "Crypto", "FLR", hex"01464c522f55534400000000000000000000000000");
         flareFlip.addSupportedAsset(1, "Crypto", "BTC", hex"014254432f55534400000000000000000000000000");
         flareFlip.addSupportedAsset(1, "Crypto", "ETH", hex"014554482f55534400000000000000000000000000");
-        
+        flareFlip.addSupportedAsset(1, "Crypto", "SGB", hex"015347422f55534400000000000000000000000000");
+        flareFlip.addSupportedAsset(1, "Crypto", "XRP", hex"015852502f55534400000000000000000000000000");
+        flareFlip.addSupportedAsset(1, "Crypto", "SOL", hex"01534f4c2f55534400000000000000000000000000");
         // Configuration
         flareFlip.setCreatorFeePercentage(500); // 5%
-        flareFlip.setMinimumStakingPeriod(7 days);
+        flareFlip.setMinimumStakingPeriod(5 days);
         
         vm.stopBroadcast();
     }

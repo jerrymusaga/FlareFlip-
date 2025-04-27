@@ -10,21 +10,17 @@ export default function CreatePoolModal({
   setNewPool,
   handleCreatePool,
   isCreatingPool,
-  error
+  error,
 }: CreatePoolModalProps) {
   if (!showCreatePoolModal) return null;
 
   const assetOptions: AssetOption[] = [
-    { name: "ETH", value: 1 },  
-    { name: "BTC", value: 2 },
-    { name: "FLR", value: 3 },
+    { name: "FLR", value: 0 },
+    { name: "BTC", value: 1 },
+    { name: "ETH", value: 2 },
+    { name: "SGB", value: 3 },
     { name: "XRP", value: 4 },
-    { name: "LTC", value: 5 },
-    { name: "DOGE", value: 6 },
-    { name: "SOL", value: 7 },
-    { name: "ADA", value: 8 },
-    { name: "MATIC", value: 9 },
-    { name: "DOT", value: 10 },
+    { name: "SOL", value: 5 },
   ];
 
   const handleAssetChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
