@@ -59,8 +59,6 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
           timeRemaining: poolData[6] ? Number(poolData[6]) : undefined,
           difficulty: "medium", // Default or fetch from contract
           popularity: Number(poolData[7]) || 0,
-          participants: participants as `0x${string}`[],
-          icon: `/icons/${tradingPair[0].toLowerCase()}.svg`,
           marketData: {
             startPrice: BigInt(marketData[0]),
             lastPrice: BigInt(marketData[1]),
@@ -76,7 +74,6 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
       }
     }
   }, [poolId, poolData, tradingPair, marketData]);
-  console.log("poolData", poolData,);
   return { pool,poolData, isLoading, error, marketData};
 }
 
