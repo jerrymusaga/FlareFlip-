@@ -113,14 +113,15 @@ export default function PoolsList({
                             Pool #{poolId} is now active!
                           </p>
                           <p className="mt-1 text-sm text-indigo-200">
-                            Trading has begun. Market prices are now available!
+                            Game has begun. Market prices are now available!
+                            Remember, Minority Choice Wins
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
                 ),
-                { duration: 4000 }
+                { duration: 8000 }
               );
             }
 
@@ -227,7 +228,7 @@ export default function PoolsList({
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Gaming Pools</h1>
           <p className="text-indigo-300">
-            Earn rewards by predicting price movements in competitive pools
+            Earn rewards by predicting the Minority Choice in competitive pools
           </p>
         </div>
 
