@@ -143,15 +143,15 @@ export function useGameState(poolIdParam: string) {
             majorityChoice: winningChoice.toString(),
             survived
           };
-
+          
           setRoundResults(prev => [...prev, newResult]);
           
-          // Clear selection if round completed
-          if (losers.includes(address as string) {
+          // Fixed missing closing parenthesis here
+          if (address && losers.includes(address as `0x${string}`)) {
             setSelectedOption(PlayerChoice.NONE);
             localStorage.removeItem(`flareflip-${poolIdParam}-selection`);
           }
-
+          
           // Update known players
           setPlayers(prev => {
             const updatedPlayers = [...prev];
@@ -174,10 +174,9 @@ export function useGameState(poolIdParam: string) {
         }
       }
     };
-
+  
     fetchResults();
   }, [currentRound, poolId, address, poolData, poolIdParam]);
-
   // Function to make a choice
   const makeChoice = async (choice: PlayerChoice) => {
     if (gameStatus === 'choosing' && !isProcessing) {
