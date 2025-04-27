@@ -64,12 +64,12 @@ export function usePoolCount() {
 export function useUserPools() {
   const { address } = useAccount();
   const [userPoolIds, setUserPoolIds] = useState<bigint[]>([]);
-  
+
   // Fetch staker info
   const {
     data: stakerInfo,
     isLoading: stakerLoading,
-    error: stakerError
+    error: stakerError,
   } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
@@ -82,14 +82,14 @@ export function useUserPools() {
 
   // Calculate active pools count
   const activePoolsCount = stakerInfo ? (stakerInfo as any)[1] : BigInt(0);
-  
+
   // Create batch requests for all user pools
   const poolRequests = Array.from(
-    { length: Number(activePoolsCount) }, 
+    { length: Number(activePoolsCount) },
     (_, i) => ({
       address: CONTRACT_ADDRESS,
       abi: flareFlipABI.abi,
-      functionName: 'userPools',
+      functionName: "userPools",
       args: [address, BigInt(i)],
     })
   );
@@ -98,7 +98,7 @@ export function useUserPools() {
   const {
     data: poolIds,
     isLoading: poolsLoading,
-    error: poolsError
+    error: poolsError,
   } = useReadContracts({
     contracts: poolRequests,
     query: {
@@ -111,18 +111,22 @@ export function useUserPools() {
     if (poolIds && poolIds.length > 0) {
       // Extract result values and filter out any undefined values
       const ids = poolIds
-        .map(result => result.result)
-        .filter(id => id !== undefined) as bigint[];
-      
+        .map((result) => result.result)
+        .filter((id) => id !== undefined) as bigint[];
+
       setUserPoolIds(ids);
-    } else if (poolIds && poolIds.length === 0 && activePoolsCount === BigInt(0)) {
+    } else if (
+      poolIds &&
+      poolIds.length === 0 &&
+      activePoolsCount === BigInt(0)
+    ) {
       setUserPoolIds([]);
     }
   }, [poolIds, activePoolsCount]);
 
   const isLoading = stakerLoading || poolsLoading;
   const isError = !!stakerError || !!poolsError;
-   
+
   return { userPoolIds, isLoading, isError };
 }
 
@@ -363,7 +367,7 @@ export function useUnstake() {
 // Hook to create a pool
 export function useCreatePool() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  
+
   const createPool = async (
     entryFee: string,
     maxParticipants: number,
@@ -375,9 +379,9 @@ export function useCreatePool() {
         abi: flareFlipABI.abi,
         functionName: "createPool",
         args: [
-          parseEther(entryFee), 
-          BigInt(maxParticipants), 
-          assetSymbol.toUpperCase() // Ensure uppercase
+          parseEther(entryFee),
+          BigInt(maxParticipants),
+          assetSymbol.toUpperCase(), // Ensure uppercase
         ],
       });
     } catch (err) {
@@ -388,7 +392,6 @@ export function useCreatePool() {
 
   return { createPool, hash, isPending, error };
 }
-
 
 // Hook to join a pool
 export function useJoinPool() {

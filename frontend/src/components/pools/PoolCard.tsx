@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Pool } from "../../types/generated";
 import { usePoolDetails, useUserPools } from "../../hooks/FlareFlipHooks";
@@ -31,6 +31,8 @@ export default function PoolCard({
     lastPrice: 0,
   });
   const navigate = useNavigate();
+  const [priceChanged, setPriceChanged] = useState(false);
+  const prevPrice = useRef({ startPrice: 0, lastPrice: 0 });
 
   const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
 
@@ -42,6 +44,25 @@ export default function PoolCard({
       return () => clearTimeout(timer);
     }
   }, [isRecentlyJoined]);
+
+  useEffect(() => {
+    if (AssetPrice.startPrice !== 0 && prevPrice.current.startPrice === 0) {
+      // Initial price set, trigger animation
+      setPriceChanged(true);
+      setTimeout(() => setPriceChanged(false), 2000);
+    } else if (
+      prevPrice.current.startPrice !== 0 &&
+      (AssetPrice.startPrice !== prevPrice.current.startPrice ||
+        AssetPrice.lastPrice !== prevPrice.current.lastPrice)
+    ) {
+      // Price updated, trigger animation
+      setPriceChanged(true);
+      setTimeout(() => setPriceChanged(false), 2000);
+    }
+
+    // Update previous price reference
+    prevPrice.current = { ...AssetPrice };
+  }, [AssetPrice]);
 
   useEffect(() => {
     if (detailedPool?.marketData) {
@@ -196,9 +217,17 @@ export default function PoolCard({
             <p className="text-xs text-indigo-400 mb-1">Starting price</p>
             <div className="flex items-center gap-1">
               <DollarSign size={16} className="text-amber-400" />
-              <p className="text-lg font-bold text-white">
+              <motion.p
+                className={`text-lg font-bold ${
+                  priceChanged ? "text-green-400" : "text-white"
+                }`}
+                animate={{
+                  scale: priceChanged ? [1, 1.1, 1] : 1,
+                  transition: { duration: 0.5 },
+                }}
+              >
                 {AssetPrice.startPrice} {"USD"}
-              </p>
+              </motion.p>
             </div>
           </div>
 
@@ -216,9 +245,17 @@ export default function PoolCard({
             <p className="text-xs text-indigo-400 mb-1">Last Price</p>
             <div className="flex items-center gap-1">
               <DollarSign size={16} className="text-amber-400" />
-              <p className="text-lg font-bold text-white">
+              <motion.p
+                className={`text-lg font-bold ${
+                  priceChanged ? "text-green-400" : "text-white"
+                }`}
+                animate={{
+                  scale: priceChanged ? [1, 1.1, 1] : 1,
+                  transition: { duration: 0.5 },
+                }}
+              >
                 {AssetPrice.lastPrice} {"USD"}
-              </p>
+              </motion.p>
             </div>
           </div>
         </div>

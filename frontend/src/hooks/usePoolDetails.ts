@@ -79,3 +79,4 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
   console.log("poolData", poolData,);
   return { pool,poolData, isLoading, error, marketData};
 }
+
