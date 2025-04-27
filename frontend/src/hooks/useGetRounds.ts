@@ -8,11 +8,12 @@ export function useRoundResults(poolId: bigint, round: number) {
       functionName: "getRoundResults",
       args: [BigInt(poolId), BigInt(round)],
     });
-  
+    console.log(data)
     return {
-      winners: data?.[0] || [],
-      losers: data?.[1] || [],
+      winners: data?.winners || [],
+      losers: data?.losers || [],
       isLoading,
       error
     };
+    
   }
