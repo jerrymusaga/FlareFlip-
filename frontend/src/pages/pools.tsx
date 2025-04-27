@@ -141,12 +141,7 @@ export default function PoolsPage() {
         newPool.maxPlayers,
         assetSymbol
       );
-      
-      // Close modal after successful creation
       setShowCreatePoolModal(false);
-      
-      // In a real app, you would update the pools list after creation
-      // For now, just show a success message
       alert("Pool created successfully!");
     } catch (err) {
       console.error("Creation error:", err);
