@@ -15,7 +15,7 @@ export default function PoolsPage() {
   
   // Store pools data
   const [pools, setPools] = useState<Pool[]>([]);
-
+     
   // Load pools data when available
   useEffect(() => {
     if (poolsData && poolsData.length > 0) {
