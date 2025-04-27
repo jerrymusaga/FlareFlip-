@@ -4,6 +4,9 @@ import { useMakeSelection, useRoundResults, PoolStatus, PlayerChoice } from './F
 import { useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { Player, RoundResult } from '../types/game';
+import { useWatchContractEvent } from 'wagmi';
+import flareFlipABI from "./ABI/FlareFlip.json";
+import { CONTRACT_ADDRESS } from "./ABI/address";
 
 export enum GameStatus {
   WAITING = 'waiting',
@@ -37,6 +40,68 @@ export function useGameState(poolIdParam: string) {
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
   const [hasParticipated, setHasParticipated] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+
+  useWatchContractEvent({
+    address: CONTRACT_ADDRESS,
+    abi: flareFlipABI.abi,
+    eventName: 'RoundCompleted',
+    args: { poolId: poolId },
+    onLogs: (logs) => {
+      logs.forEach((log) => {
+        const { round, winningChoice } = log.args;
+        console.log(`Round ${round} completed with choice ${winningChoice}`);
+        
+        // Fetch updated results when round completes
+        fetchRoundResults(Number(round));
+        
+        // Move to next round
+        setCurrentRound(prev => prev + 1);
+        setSelectedOption(PlayerChoice.NONE);
+        localStorage.removeItem(`flareflip-${poolIdParam}-selection`);
+      });
+    },
+  });
+  const fetchRoundResults = async (round: number) => {
+    try {
+      const { winners, losers } = await useRoundResults(poolId, round);
+      const survived = address ? winners.includes(address) : false;
+      
+      setRoundResults(prev => {
+        const newResults = [...prev];
+        newResults[round] = {
+          round: round + 1, // 1-based index
+          winners,
+          losers,
+          winningChoice: PlayerChoice[winningChoice],
+          majorityChoice: PlayerChoice[winningChoice],
+          survived
+        };
+        return newResults;
+      });
+
+      // Update player states
+      setPlayers(prev => 
+        prev.map(p => ({
+          ...p,
+          isEliminated: losers.includes(p.address)
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching round results:", error);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    const initializeGame = async () => {
+      if (poolData) {
+        // Fetch current round results
+        await fetchRoundResults(Number(poolData[8]) - 1); // currentRound is index 8
+      }
+    };
+    initializeGame();
+  }, [poolData]);
 
   // Load saved selection from localStorage
   useEffect(() => {
