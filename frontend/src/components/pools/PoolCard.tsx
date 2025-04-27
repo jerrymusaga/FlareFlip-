@@ -4,7 +4,15 @@ import { Pool } from "../../types/generated";
 import { usePoolDetails, useUserPools } from "../../hooks/FlareFlipHooks";
 import { motion } from "framer-motion";
 
-import { Trophy, Users, Coins, Zap, DollarSign } from "lucide-react";
+import {
+  Trophy,
+  Users,
+  Coins,
+  Zap,
+  DollarSign,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 
 interface PoolCardProps {
   pool: Pool;
@@ -34,7 +42,90 @@ export default function PoolCard({
   const [priceChanged, setPriceChanged] = useState(false);
   const prevPrice = useRef({ startPrice: 0, lastPrice: 0 });
 
+  // Track price movement direction
+  const [priceMovement, setPriceMovement] = useState({
+    direction: "none", // 'up', 'down', or 'none'
+    percentage: 0,
+  });
+
   const isUserInPool = userPoolIds.some((poolId) => poolId === BigInt(pool.id));
+
+  useEffect(() => {
+    if (detailedPool?.marketData) {
+      // Convert from Wei to regular units without losing precision for small numbers
+      const startPrice = Number(detailedPool.marketData.startPrice) / 10 ** 18;
+      const lastPrice = Number(detailedPool.marketData.lastPrice) / 10 ** 18;
+
+      const formattedStartPrice = formatPrice(startPrice);
+      const formattedLastPrice = formatPrice(lastPrice);
+
+      // Check if we have previous prices to compare
+      if (prevPrice.current.startPrice !== 0) {
+        // Compare with previous values to determine movement
+        if (formattedLastPrice > prevPrice.current.lastPrice) {
+          const percentChange =
+            prevPrice.current.lastPrice !== 0
+              ? ((formattedLastPrice - prevPrice.current.lastPrice) /
+                  prevPrice.current.lastPrice) *
+                100
+              : 0;
+
+          setPriceMovement({
+            direction: "up",
+            percentage: formatPrice(percentChange),
+          });
+        } else if (formattedLastPrice < prevPrice.current.lastPrice) {
+          const percentChange =
+            prevPrice.current.lastPrice !== 0
+              ? ((prevPrice.current.lastPrice - formattedLastPrice) /
+                  prevPrice.current.lastPrice) *
+                100
+              : 0;
+
+          setPriceMovement({
+            direction: "down",
+            percentage: formatPrice(percentChange),
+          });
+        }
+      } else if (pool.status === "active") {
+        // For existing active pools, initialize with a comparison to starting price
+        // This ensures existing pools show some movement indicator
+        if (formattedLastPrice > formattedStartPrice) {
+          const percentChange =
+            ((formattedLastPrice - formattedStartPrice) / formattedStartPrice) *
+            100;
+          setPriceMovement({
+            direction: "up",
+            percentage: formatPrice(percentChange),
+          });
+        } else if (formattedLastPrice < formattedStartPrice) {
+          const percentChange =
+            ((formattedStartPrice - formattedLastPrice) / formattedStartPrice) *
+            100;
+          setPriceMovement({
+            direction: "down",
+            percentage: formatPrice(percentChange),
+          });
+        }
+      }
+
+      // Update current price state
+      setCurrentPrice({
+        startPrice: formattedStartPrice,
+        lastPrice: formattedLastPrice,
+      });
+
+      // Update previous price reference
+      prevPrice.current = {
+        startPrice: formattedStartPrice,
+        lastPrice: formattedLastPrice,
+      };
+
+      // Trigger animation
+      setPriceChanged(true);
+      setTimeout(() => setPriceChanged(false), 2000);
+    }
+  }, [detailedPool, pool.status]);
 
   // Set pulsing effect when the pool is recently joined
   useEffect(() => {
@@ -45,34 +136,28 @@ export default function PoolCard({
     }
   }, [isRecentlyJoined]);
 
-  useEffect(() => {
-    if (AssetPrice.startPrice !== 0 && prevPrice.current.startPrice === 0) {
-      // Initial price set, trigger animation
-      setPriceChanged(true);
-      setTimeout(() => setPriceChanged(false), 2000);
-    } else if (
-      prevPrice.current.startPrice !== 0 &&
-      (AssetPrice.startPrice !== prevPrice.current.startPrice ||
-        AssetPrice.lastPrice !== prevPrice.current.lastPrice)
-    ) {
-      // Price updated, trigger animation
-      setPriceChanged(true);
-      setTimeout(() => setPriceChanged(false), 2000);
+  // Helper function to format prices
+  const formatPrice = (price: number): number => {
+    // For very small numbers (less than 0.01), keep more decimal places
+    if (Math.abs(price) < 0.01 && price !== 0) {
+      // Return with 4-8 significant digits based on how small the number is
+      const significantDigits = price < 0.0001 ? 8 : price < 0.001 ? 6 : 4;
+      return parseFloat(price.toFixed(significantDigits));
     }
 
-    // Update previous price reference
-    prevPrice.current = { ...AssetPrice };
-  }, [AssetPrice]);
+    // For normal numbers, keep 2 decimal places
+    return parseFloat(price.toFixed(2));
+  };
 
   useEffect(() => {
     if (detailedPool?.marketData) {
+      // Convert from Wei to regular units without losing precision for small numbers
+      const startPrice = Number(detailedPool.marketData.startPrice) / 10 ** 18;
+      const lastPrice = Number(detailedPool.marketData.lastPrice) / 10 ** 18;
+
       setCurrentPrice({
-        startPrice: parseFloat(
-          (Number(detailedPool.marketData.startPrice) / 10 ** 18).toFixed(2)
-        ),
-        lastPrice: parseFloat(
-          (Number(detailedPool.marketData.lastPrice) / 10 ** 18).toFixed(2)
-        ),
+        startPrice: formatPrice(startPrice),
+        lastPrice: formatPrice(lastPrice),
       });
     }
   }, [detailedPool]);
@@ -166,6 +251,16 @@ export default function PoolCard({
 
   const buttonInfo = getButtonInfo();
 
+  // Get price movement class for colors
+  const getPriceMovementClass = () => {
+    if (priceMovement.direction === "up") {
+      return "text-green-400";
+    } else if (priceMovement.direction === "down") {
+      return "text-red-400";
+    }
+    return "text-indigo-400";
+  };
+
   return (
     <motion.div
       animate={{
@@ -256,6 +351,22 @@ export default function PoolCard({
               >
                 {AssetPrice.lastPrice} {"USD"}
               </motion.p>
+
+              {/* Price movement indicator */}
+              {priceMovement.direction !== "none" && (
+                <div
+                  className={`flex items-center ml-1 ${getPriceMovementClass()}`}
+                >
+                  {priceMovement.direction === "up" ? (
+                    <ChevronUp size={14} className="text-green-400" />
+                  ) : (
+                    <ChevronDown size={14} className="text-red-400" />
+                  )}
+                  <span className="text-xs font-medium">
+                    {priceMovement.percentage}%
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
