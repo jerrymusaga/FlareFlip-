@@ -48,12 +48,12 @@ FlareFlip addresses these issues by:
 - **Multiple Asset Categories**: Support for crypto, commodities, and forex price movements
 - **Creator Rewards**: Pool creators/Stakers earn a percentage of the prize pool
 
-## Play on Explorer
+## Play/Verify on Explorer
 
 The contract is deployed and verified on the coston2 network
 You can interact with the smart contract here: https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee
 
-#[Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee)
+[Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee)
 
 ## Technical Implementation
 
@@ -228,6 +228,8 @@ constructor() Ownable(msg.sender) {
 }
 ```
 
+Note: The UI/UX in prize claim is still under development. This is just the MVP
+
 ## 🎮 User Story
 
 ### 0. Scouting Pools
@@ -265,6 +267,8 @@ Alex discovers Jordan's prediction pool and decides to participate:
 
 ### 3. Making Predictions
 
+![events](screenshots/events.png)
+
 Once the pool is full with 20 participants, the game begins:
 
 - All players, including Alex, choose either HEADS or TAILS
@@ -280,8 +284,6 @@ Once the pool is full with 20 participants, the game begins:
 
 ### 4. Round Resolution
 
-![Round Results Screen]
-
 After all selections are made:
 
 - The system tallies the votes: 12 players chose HEADS, 8 chose TAILS
@@ -294,8 +296,6 @@ After all selections are made:
 ```
 
 ### 5. Tie Breaking
-
-![Tie Breaking Screen]
 
 In the second round, the remaining 8 players are evenly split:
 
@@ -310,9 +310,9 @@ In the second round, the remaining 8 players are evenly split:
 "The tie-breaking mechanism is genius - it's unpredictable but not random. Combining price movement with a random number means you can't game the system, but skilled players still have an edge."
 ```
 
-### 6. Final Winner and Prize Distribution
+![elimination screen](screenshots/elimunation.png)
 
-![Prize Distribution Screen]
+### 6. Final Winner and Prize Distribution
 
 After several rounds of elimination:
 
@@ -373,10 +373,6 @@ cd FlareFlip-/frontend
 
 # Install dependencies
 npm install
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your configuration
 
 npm run dev
 ```
