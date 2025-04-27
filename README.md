@@ -222,13 +222,17 @@ constructor() Ownable(msg.sender) {
 
 ## 🎮 User Journey
 
+
 ![Game Flow Diagram]
 
 ### 1. Pool Creation
 
 ![Pool Creation Screen]
+file:///home/musaga/Pictures/Screenshots/Screenshot%20from%202025-04-27%2013-13-57.png
+file:///home/musaga/Pictures/Screenshots/Screenshot%20from%202025-04-27%2013-14-14.png
 
-As a staker, Jordan wants to create an engaging prediction pool. She:
+
+As a staker, Jordan wants to create an engaging prediction pool from assets supported on the platform from the FTSO feeds. She:
 
 - Stakes 20 FLR to become eligible as a pool creator
 - Creates a new Bitcoin price prediction pool with an entry fee of 10 FLR
