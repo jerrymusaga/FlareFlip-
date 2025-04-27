@@ -183,7 +183,7 @@ export default function PoolCard({
       setIsPlaying(false);
     }
   };
-
+   console.log(pool.currentPlayers)
   const getButtonInfo = () => {
     // If user created this pool
     if (pool.creator === address) {
@@ -197,7 +197,7 @@ export default function PoolCard({
 
     if (isUserInPool) {
       // If pool is active and user is in pool, show Play button
-      if (pool.status === "active") {
+      if (pool.status === "open" && pool.currentPlayers == pool.maxPlayers) {
         return {
           text: isPlaying ? "Playing..." : "Play Now",
           disabled: isPlaying,
@@ -226,10 +226,10 @@ export default function PoolCard({
         };
       case "active":
         return {
-          text: "In Progress",
-          disabled: true,
-          className: "bg-blue-100 text-blue-600 cursor-not-allowed",
-          onClick: () => {},
+          text: "Play Now",
+          disabled: isJoining,
+          className: "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white",
+          onClick: handlePlay,
         };
       case "completed":
         return {
