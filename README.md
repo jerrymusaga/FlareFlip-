@@ -10,10 +10,11 @@ Unlike traditional prediction games, FlareFlip implements a **"Minority Wins"** 
 
 - [Problem statement](#problem-statement-&-solution)
 - [Features](#features)
+- [Play on explorer](#play-on-explorer)
 - [Technical Implementation](#technical-implementation)
   - [Smart Contract Architecture](#smart-contract-architecture)
   - [Flare Network Integration](#flare-network-integration)
-- [🎮 User Journey](#🎮-user-journey)
+- [🎮 User Story](#🎮-user-story)
 - [How to Play](#how-to-play)
 - [Future Roadmap/Vision](#future-roadmap)
   - [Phase 1: Core Game enhancement](#phase-1-core-game-enhancement)
@@ -46,6 +47,13 @@ FlareFlip addresses these issues by:
 - **Transparent Prize Distribution**: Smart contract enforces automatic prize payouts
 - **Multiple Asset Categories**: Support for crypto, commodities, and forex price movements
 - **Creator Rewards**: Pool creators/Stakers earn a percentage of the prize pool
+
+## Play on Explorer
+
+The contract is deployed and verified on the coston2 network
+You can interact with the smart contract here: https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee
+
+#[Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee)
 
 ## Technical Implementation
 
@@ -220,15 +228,16 @@ constructor() Ownable(msg.sender) {
 }
 ```
 
-## 🎮 User Journey
+## 🎮 User Story
 
-![Game Flow Diagram]
+### 0. Scouting Pools
+
+Jordan heard about the viral **minority** prediction game on Flare blockchain network and decided to visit the platform. She saw the pools and noticed how the price of each pool based on crypto asset was updating. She went through How to Play section, understood the flow and decided to leverage the benefit and became a staker.
+![all pools](screenshots/allpools.jpg)
 
 ### 1. Pool Creation
 
-![Pool Creation Screen]
-
-As a staker, Jordan wants to create an engaging prediction pool. She:
+As a staker, Jordan wants to create an engaging prediction pool from assets supported on the platform from the FTSO feeds. She:
 
 - Stakes 20 FLR to become eligible as a pool creator
 - Creates a new Bitcoin price prediction pool with an entry fee of 10 FLR
@@ -238,9 +247,9 @@ As a staker, Jordan wants to create an engaging prediction pool. She:
 "I love creating pools based on Bitcoin price movements. The 5% creator fee gives me an incentive to bring in active players, and I can create up to 3 pools simultaneously to maximize my earnings."
 ```
 
-### 2. Joining a Pool
+![pool creation screen](screenshots/poolcreation.png)
 
-![Pool Joining Screen]
+### 2. Joining a Pool
 
 Alex discovers Jordan's prediction pool and decides to participate:
 
@@ -252,9 +261,9 @@ Alex discovers Jordan's prediction pool and decides to participate:
 "I joined this BTC pool because I love BTC, I like the entry fee and participant count. With 20 players, the prize pot is substantial, and having multiple rounds keeps the game interesting."
 ```
 
-### 3. Making Predictions
+![Pool Joining Screen](screenshots/joinpool1.jpg) ![pool joining](screenshots/joinpool2.png)
 
-![Prediction Interface]
+### 3. Making Predictions
 
 Once the pool is full with 20 participants, the game begins:
 
@@ -266,6 +275,8 @@ Once the pool is full with 20 participants, the game begins:
 ```
 "The minority wins mechanism makes this game so much more strategic than regular prediction games. I need to anticipate what others will choose, not just predict price movements or make random guesses."
 ```
+
+![Prediction Interface](screenshots/playsection.png)
 
 ### 4. Round Resolution
 
