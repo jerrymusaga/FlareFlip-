@@ -222,15 +222,11 @@ constructor() Ownable(msg.sender) {
 
 ## 🎮 User Journey
 
-
 ![Game Flow Diagram]
 
 ### 1. Pool Creation
 
-![Pool Creation Screen]
-file:///home/musaga/Pictures/Screenshots/Screenshot%20from%202025-04-27%2013-13-57.png
-file:///home/musaga/Pictures/Screenshots/Screenshot%20from%202025-04-27%2013-14-14.png
-
+![pool creation](screenshots/poolcreation.png)
 
 As a staker, Jordan wants to create an engaging prediction pool from assets supported on the platform from the FTSO feeds. She:
 
