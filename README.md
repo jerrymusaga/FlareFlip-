@@ -226,7 +226,7 @@ constructor() Ownable(msg.sender) {
 
 ### 1. Pool Creation
 
-![pool creation](screenshots/poolcreation.png)
+![pool creation screen](screenshots/poolcreation.png)
 
 As a staker, Jordan wants to create an engaging prediction pool from assets supported on the platform from the FTSO feeds. She:
 
@@ -240,7 +240,7 @@ As a staker, Jordan wants to create an engaging prediction pool from assets supp
 
 ### 2. Joining a Pool
 
-![Pool Joining Screen]
+![Pool Joining Screen](screenshots/joinpool1.jpg) ![pool joining](screenshots/joinpool2.png)
 
 Alex discovers Jordan's prediction pool and decides to participate:
 
