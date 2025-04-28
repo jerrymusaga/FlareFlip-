@@ -182,6 +182,7 @@ export default function PoolsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-950 to-indigo-950">
       {/* Use the PoolsList component for the main UI */}
+    
       <PoolsList
         pools={pools}
         stakerInfo={stakerInfo}
@@ -228,6 +229,7 @@ export default function PoolsPage() {
         setNewPool={setNewPool}
         handleCreatePool={handleCreatePool}
         isCreatingPool={isCreatingPool}
+        error={null}
       />
     </div>
   );

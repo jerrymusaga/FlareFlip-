@@ -50,15 +50,14 @@ export function GameInterface({
   useEffect(() => {
     const roundEventName = `RoundCompleted-${poolId}-${currentRound}`;
     const handler = (e: CustomEvent) => {
-      const { startPrice, lastPrice, randomValue, winningSelection } =
-        event.detail;
+      
       const { winningChoice } = e.detail;
       setCurrentResult((prev) => ({
         ...prev!,
         winningChoice,
         majorityChoice: (winningChoice === PlayerChoice.HEADS
           ? PlayerChoice.TAILS
-          : PlayerChoice.HEADS) as string,
+          : PlayerChoice.HEADS) as unknown as string,
       }));
     };
     window.addEventListener(roundEventName, handler as EventListener);

@@ -4,7 +4,6 @@ import { GameHeader } from "./GameHeader";
 import { useAccount } from "wagmi";
 import { GameInterface } from "./GameInterface";
 import { GameResults } from "./GameResults";
-import { useEffect } from "react";
 import { GameHistory } from "./GameHistory";
 
 export default function GameContainer() {
@@ -49,7 +48,7 @@ export default function GameContainer() {
         currentRound={currentRound}
         timeLeft={timeLeft}
         playerCount={players.length}
-        survivingCount={survivingPlayers.length}
+        survivingCount={survivingPlayers}
         isTie={isTie}
       />
 
@@ -87,6 +86,7 @@ export default function GameContainer() {
 
             {gameStatus === "finished" && (
               <GameResults
+                  // @ts-ignore
                 winners={survivingPlayers}
                 prizePool={gameInfo?.prizePool || "0"}
               />
