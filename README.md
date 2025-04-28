@@ -10,7 +10,7 @@ Unlike traditional prediction games, FlareFlip implements a **"Minority Wins"** 
 
 - [Problem statement](#problem-statement-&-solution)
 - [Features](#features)
-- [Play on explorer](#play-on-explorer)
+- [Play and Verify on Explorer and live demo link](#Play-and-Verify-on-Explorer-and-live-demo-link)
 - [Technical Implementation](#technical-implementation)
   - [Smart Contract Architecture](#smart-contract-architecture)
   - [Flare Network Integration](#flare-network-integration)
@@ -48,12 +48,14 @@ FlareFlip addresses these issues by:
 - **Multiple Asset Categories**: Support for crypto, commodities, and forex price movements
 - **Creator Rewards**: Pool creators/Stakers earn a percentage of the prize pool
 
-## Play/Verify on Explorer
+## Play and Verify on Explorer and live demo link
 
 The contract is deployed and verified on the coston2 network
-You can interact with the smart contract here: https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee
+You can interact with the smart contract here: https://coston2-explorer.flare.network/address/0x8eF8E3391B04BcB03ae0b504Ad0B933b3b63A065
 
-[Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0xa29340ad99409467d8b8f9375987d5b08ffe4bee)
+[Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0x8eF8E3391B04BcB03ae0b504Ad0B933b3b63A065)
+
+[Live Demo Link](https://flareflip-3sql3pyhm-jerrymusagas-projects.vercel.app)
 
 ## Technical Implementation
 
