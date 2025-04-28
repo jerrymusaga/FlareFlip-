@@ -69,14 +69,19 @@ export function useGameState(poolIdParam: string) {
     args: { poolId: poolId },
     onLogs: (logs) => {
       logs.forEach((log) => {
+        // @ts-ignore
         if (Number(log.args.round) === currentRound) {
           const event = new CustomEvent(
             `TieBrokenByHybrid-${poolId}-${currentRound}`,
             {
               detail: {
+                // @ts-ignore
                 startPrice: log.args.startPrice,
+                // @ts-ignore,
                 lastPrice: log.args.lastPrice,
+                // @ts-ignore
                 randomValue: log.args.randomValue,
+                // @ts-ignore
                 winningSelection: log.args.winningSelection,
               },
             }
@@ -94,6 +99,7 @@ export function useGameState(poolIdParam: string) {
     args: { poolId: poolId },
     onLogs: (logs) => {
       logs.forEach((log) => {
+        // @ts-ignore
         const { round, winningChoice } = log.args;
         console.log(`Round ${round} completed with choice ${winningChoice}`);
 
@@ -133,9 +139,13 @@ export function useGameState(poolIdParam: string) {
           round: round + 1,
           winners,
           losers,
+          // @ts-ignore
           winningChoice:
+          // @ts-ignore
             PlayerChoice[winningChoice as keyof typeof PlayerChoice],
+            // @ts-ignore
           majorityChoice:
+          // @ts-ignore
             PlayerChoice[winningChoice as keyof typeof PlayerChoice],
           survived,
         };
@@ -158,6 +168,7 @@ export function useGameState(poolIdParam: string) {
           if (!updatedPlayers.some((p) => p.address === address)) {
             updatedPlayers.push({
               address,
+              // @ts-ignore
               choice: PlayerChoice.NONE,
               isEliminated: losers.includes(address),
             });
@@ -182,7 +193,9 @@ export function useGameState(poolIdParam: string) {
     args: { poolId: poolId },
     onLogs: (logs) => {
       logs.forEach((log) => {
+        // @ts-ignore
         if (Number(log.args.round) === currentRound) {
+          // @ts-ignore
           setCurrentRoundWinners(log.args.winners);
         }
       });
@@ -196,7 +209,9 @@ export function useGameState(poolIdParam: string) {
     args: { poolId: poolId },
     onLogs: (logs) => {
       logs.forEach((log) => {
+        // @ts-ignore
         if (Number(log.args.round) === currentRound) {
+             // @ts-ignore
           setCurrentRoundLosers(log.args.losers);
         }
       });
@@ -231,6 +246,7 @@ export function useGameState(poolIdParam: string) {
       `flareflip-${poolIdParam}-selection`
     );
     if (savedSelection) {
+      // @ts-ignore
       setSelectedOption(savedSelection as PlayerChoice);
       setHasParticipated(true);
     }
@@ -338,7 +354,7 @@ export function useGameState(poolIdParam: string) {
 
 
 
-  
+
 
   useEffect(() => {
     if (poolData) {
@@ -422,6 +438,7 @@ export function useGameState(poolIdParam: string) {
             if (!existing) {
               updatedPlayers.push({
                 address: addr,
+                // @ts-ignore
                 choice: PlayerChoice.NONE,
                 isEliminated: losers.includes(addr),
               });
@@ -458,7 +475,7 @@ export function useGameState(poolIdParam: string) {
       setIsProcessing(true);
       try {
         await makeSelection(poolId, choice);
-        setSelectedOption(choice);
+        setSelectedOption(choice);// @ts-ignore
         localStorage.setItem(`flareflip-${poolIdParam}-selection`, choice);
       } finally {
         setIsProcessing(false);

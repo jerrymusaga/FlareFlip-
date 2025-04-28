@@ -17,7 +17,6 @@ interface PoolsListProps {
   isConnected: boolean;
   onShowStakingModal: () => void;
   onShowCreateModal: () => void;
-  onPlay: (poolId: string) => void; // Add this new prop
 }
 
 export default function PoolsList({

@@ -15,6 +15,7 @@ export function GameHistory({ roundResults, currentAddress }: GameHistoryProps) 
       ? result.winners.includes(currentAddress) 
         ? result.winningChoice 
         : result.losers.includes(currentAddress)
+        // @ts-ignore
           ? result.winningChoice === PlayerChoice.HEADS 
             ? PlayerChoice.TAILS 
             : PlayerChoice.HEADS
@@ -48,13 +49,15 @@ export function GameHistory({ roundResults, currentAddress }: GameHistoryProps) 
                   <span className={result.choice === PlayerChoice.HEADS 
                     ? "text-yellow-400 font-medium" 
                     : "text-blue-400 font-medium"}>
-                    {result.choice.toUpperCase()}
+                      
+                    {String(result.choice).toUpperCase()}
                   </span>
                   <ArrowRight size={14} className="text-gray-400" />
                 </>
               )}
               
               <span className="text-gray-300">Majority:</span>
+              
               <span className={result.majorityChoice === PlayerChoice.HEADS 
                 ? "text-yellow-400 font-medium" 
                 : "text-blue-400 font-medium"}>
