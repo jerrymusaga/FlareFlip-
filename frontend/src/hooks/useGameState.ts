@@ -23,7 +23,7 @@ export function useGameState(poolIdParam: string) {
   const poolId = BigInt(poolIdParam);
   const { address } = useAccount();
   const [currentRoundWinners, setCurrentRoundWinners] = useState<string[]>([]);
-  const [roundErrors, setRoundErrors] = useState<{ [round: number]: Error }>(
+  const [_roundErrors, setRoundErrors] = useState<{ [round: number]: Error }>(
     {}
   );
   const [currentRoundLosers, setCurrentRoundLosers] = useState<string[]>([]);
@@ -41,11 +41,7 @@ export function useGameState(poolIdParam: string) {
     error: Error | null;
   };
 
-  const {
-    makeSelection,
-    isLoading: selectionLoading,
-    isSuccess: selectionSuccess,
-  } = useMakeSelection();
+  const { makeSelection, isLoading: selectionLoading } = useMakeSelection();
 
   // Game state
   const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.LOADING);
@@ -141,11 +137,11 @@ export function useGameState(poolIdParam: string) {
           losers,
           // @ts-ignore
           winningChoice:
-          // @ts-ignore
-            PlayerChoice[winningChoice as keyof typeof PlayerChoice],
             // @ts-ignore
-          majorityChoice:
+            PlayerChoice[winningChoice as keyof typeof PlayerChoice],
           // @ts-ignore
+          majorityChoice:
+            // @ts-ignore
             PlayerChoice[winningChoice as keyof typeof PlayerChoice],
           survived,
         };
@@ -181,11 +177,6 @@ export function useGameState(poolIdParam: string) {
     }
   };
 
-
-
-
-
-
   useWatchContractEvent({
     address: CONTRACT_ADDRESS,
     abi: flareFlipABI.abi,
@@ -211,7 +202,7 @@ export function useGameState(poolIdParam: string) {
       logs.forEach((log) => {
         // @ts-ignore
         if (Number(log.args.round) === currentRound) {
-             // @ts-ignore
+          // @ts-ignore
           setCurrentRoundLosers(log.args.losers);
         }
       });
@@ -229,7 +220,9 @@ export function useGameState(poolIdParam: string) {
             // Try to fetch previous round results
             await fetchRoundResults(currentRoundNumber - 1);
           } catch (error) {
-            console.log("Could not fetch previous round, might not be ended yet");
+            console.log(
+              "Could not fetch previous round, might not be ended yet"
+            );
             // Don't block initialization on this error
           }
         }
@@ -237,8 +230,6 @@ export function useGameState(poolIdParam: string) {
     };
     initializeGame();
   }, [poolData]);
-
-
 
   // Load saved selection from localStorage
   useEffect(() => {
@@ -257,76 +248,85 @@ export function useGameState(poolIdParam: string) {
     if (!poolData || !marketData)
       return {
         poolId: poolIdParam,
-        entryFee: "0",
-        prizePool: "0",
         assetSymbol: "",
-        marketPrice: "0",
+        entryFee: "0",
+        maxParticipants: 0,
+        currentParticipants: 0,
+        prizePool: "0",
+        status: "unknown",
+        creator: "unknown",
+        currentRound: 1,
       };
 
     return {
-      poolId: poolIdParam,
-      entryFee: formatEther(poolData[2]?.toString() || "0"),
-      prizePool: formatEther(poolData[5]?.toString() || "0"),
-      assetSymbol: poolData[0] as string,
-      marketPrice: formatEther(marketData[1]?.toString() || "0"),
-      maxPlayers: Number(poolData[3] || 0),
-      currentPlayers: Number(poolData[4] || 0),
-      timeRemaining: poolData[8] ? Number(poolData[8]) : undefined,
+    poolId: poolIdParam,
+    assetSymbol: poolData[0] as string,
+    entryFee: formatEther(poolData[2]?.toString() || "0"),
+    maxParticipants: Number(poolData[3] || 0),
+    currentParticipants: Number(poolData[4] || 0),
+    prizePool: formatEther(poolData[5]?.toString() || "0"),
+    status: PoolStatus[Number(poolData[6])] || "unknown",
+    creator: poolData[7]?.toString() || "unknown",
+    currentRound: Number(poolData[8] || 1),
+    // Optional market data if needed elsewhere
+    marketPrice: formatEther(marketData[1]?.toString() || "0")
     };
   }, [poolData, marketData, poolIdParam]);
 
   // Track participation via round results
   useEffect(() => {
     // Check from localStorage to see if user has already made a selection
-    const savedSelection = localStorage.getItem(`flareflip-${poolIdParam}-selection`);
+    const savedSelection = localStorage.getItem(
+      `flareflip-${poolIdParam}-selection`
+    );
     const participatedFromStorage = !!savedSelection;
-    
+
     // Also check from round results if available
-    const participatedFromResults = address && roundResults.length > 0 && 
-      roundResults.some(result => 
-        result.winners.includes(address) || result.losers.includes(address)
+    const participatedFromResults =
+      address &&
+      roundResults.length > 0 &&
+      roundResults.some(
+        (result) =>
+          result.winners.includes(address) || result.losers.includes(address)
       );
-    
+
     setHasParticipated(participatedFromStorage || !!participatedFromResults);
   }, [address, roundResults, poolIdParam]);
 
   // Set initial loading state
   useEffect(() => {
-    
     if (poolLoading) {
       setGameStatus(GameStatus.LOADING);
       return;
     }
-  
+
     // Handle error state
     if (poolError) {
       console.error("Pool error:", poolError);
       setGameStatus(GameStatus.ERROR);
       return;
     }
-  
+
     // Handle missing data
     if (!poolData) {
       console.error("No pool data available");
       setGameStatus(GameStatus.ERROR);
       return;
     }
-  
-  
+
     if (poolData[6] === undefined) {
       console.error("Pool status is undefined in poolData");
       setGameStatus(GameStatus.ERROR);
       return;
     }
-  
+
     // Now safely process the status
     const status = Number(poolData[6]);
     const currentRound = Number(poolData[8] || 1);
     setCurrentRound(currentRound);
-  
+
     console.log("Pool Data Status:", status, "Current Round:", currentRound);
-  
-    
+
     switch (status) {
       case PoolStatus.OPENED:
         setGameStatus(GameStatus.WAITING);
@@ -346,15 +346,6 @@ export function useGameState(poolIdParam: string) {
         setGameStatus(GameStatus.ERROR);
     }
   }, [poolLoading, poolError, poolData, selectedOption]);
-
-
-
-
-
-
-
-
-
 
   useEffect(() => {
     if (poolData) {
@@ -379,14 +370,13 @@ export function useGameState(poolIdParam: string) {
       return;
     }
     const fetchResults = async () => {
-
-        if (
-          !currentRound ||
-          !poolData ||
-          poolData[6] === PoolStatus.OPENED ||
-          !client
-        )
-          return;
+      if (
+        !currentRound ||
+        !poolData ||
+        poolData[6] === PoolStatus.OPENED ||
+        !client
+      )
+        return;
 
       try {
         // Direct contract call instead of using hook
@@ -410,9 +400,9 @@ export function useGameState(poolIdParam: string) {
 
         setRoundResults((prev) => {
           const newResults = [...prev];
-         
+
           newResults[currentRound - 1] = {
-            round: currentRound, 
+            round: currentRound,
             winners,
             losers,
             winningChoice: winningChoice.toString(),
@@ -422,7 +412,6 @@ export function useGameState(poolIdParam: string) {
           return newResults;
         });
 
-        
         if (address && losers.includes(address)) {
           setSelectedOption(PlayerChoice.NONE);
           localStorage.removeItem(`flareflip-${poolIdParam}-selection`);
@@ -457,7 +446,7 @@ export function useGameState(poolIdParam: string) {
         }));
 
         if (
-          error instanceof Error && 
+          error instanceof Error &&
           error.message.includes("Round not ended")
         ) {
           console.log(`Round ${currentRound - 1} not ended yet, waiting...`);
@@ -475,7 +464,7 @@ export function useGameState(poolIdParam: string) {
       setIsProcessing(true);
       try {
         await makeSelection(poolId, choice);
-        setSelectedOption(choice);// @ts-ignore
+        setSelectedOption(choice); // @ts-ignore
         localStorage.setItem(`flareflip-${poolIdParam}-selection`, choice);
       } finally {
         setIsProcessing(false);

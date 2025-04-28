@@ -58,7 +58,7 @@ export function GameHistory({ roundResults, currentAddress }: GameHistoryProps) 
               
               <span className="text-gray-300">Majority:</span>
               
-              <span className={result.majorityChoice === PlayerChoice.HEADS 
+              <span className={result.majorityChoice === PlayerChoice.HEADS.toString() 
                 ? "text-yellow-400 font-medium" 
                 : "text-blue-400 font-medium"}>
                 {result.majorityChoice.toUpperCase()}

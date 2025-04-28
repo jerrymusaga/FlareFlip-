@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { GameStatus } from "../../types/game";
 import { RoundResult } from "../../types/game";
 import { PlayerChoice } from "../../hooks/FlareFlipHooks";
-import { ArrowRight } from "lucide-react";
 import { formatEther } from 'viem';
 
 interface GameInterfaceProps {
@@ -43,8 +42,8 @@ export function GameInterface({
     headsCount: number;
     tailsCount: number;
   } | null>(null);
-  const [showTieBreakerAnimation, setShowTieBreakerAnimation] = useState(false);
-  const [tieBreakerStep, setTieBreakerStep] = useState<number>(0);
+  const [_showTieBreakerAnimation, setShowTieBreakerAnimation] = useState(false);
+  const [_tieBreakerStep, setTieBreakerStep] = useState<number>(0);
 
   // Listen for RoundCompleted events
   useEffect(() => {

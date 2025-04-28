@@ -56,7 +56,7 @@ export default function PoolsPage() {
     difficulty: "medium",
   });
 
-  const { data: balanceData, isError } = useBalance({
+  const { data: balanceData,} = useBalance({
     address: address,
     chainId: 114,
   });

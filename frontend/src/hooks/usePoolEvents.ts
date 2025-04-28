@@ -13,6 +13,7 @@ export function usePoolEvents({
     eventName: "PlayerJoined",
     onLogs: (logs) => {
       logs.forEach((log) => {
+        //@ts-ignore
         const { poolId, player } = log.args;
         if (poolId !== undefined && player) {
           onPlayerJoined(poolId, player);

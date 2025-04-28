@@ -100,6 +100,7 @@ export function useUserPools() {
     isLoading: poolsLoading,
     error: poolsError,
   } = useReadContracts({
+    // @ts-ignore
     contracts: poolRequests,
     query: {
       enabled: !!address && activePoolsCount > 0,
@@ -182,17 +183,28 @@ export function usePoolDetails(poolId: bigint | number | undefined) {
         // Combine all data into a pool object
         const formattedPool: Pool = {
           id: Number(poolId),
+          // @ts-ignore
           entryFee: poolData[0] as bigint,
+           // @ts-ignore
           maxParticipants: Number(poolData[1]),
+           // @ts-ignore
           currentParticipants: Number(poolData[2]),
+           // @ts-ignore
           prizePool: poolData[3] as bigint,
+           // @ts-ignore
           status: Number(poolData[4]) as PoolStatus,
+           // @ts-ignore
           assetSymbol: tradingPair[0] as string,
+           // @ts-ignore
           creator: poolData[5] as `0x${string}`,
+           // @ts-ignore
           currentRound: 0, // You'll need to add this to your read function or use a separate call
           marketData: {
+             // @ts-ignore
             startPrice: marketData[0] as bigint,
+             // @ts-ignore
             lastPrice: marketData[1] as bigint,
+             // @ts-ignore
             lastUpdated: Number(marketData[3]),
           },
         };
@@ -263,8 +275,9 @@ export function useRoundResults(
     functionName: "getRoundResults",
     args: [BigInt(poolId), BigInt(round)],
   });
-
+ // @ts-ignore
   const winners = results ? (results[0] as `0x${string}`[]) : [];
+   // @ts-ignore
   const losers = results ? (results[1] as `0x${string}`[]) : [];
 
   return { winners, losers, isError, isLoading };
@@ -292,9 +305,13 @@ export function useStakerInfo(address?: `0x${string}`) {
   return {
     stakerInfo: stakerInfo
       ? {
+         // @ts-ignore
           stakedAmount: stakerInfo[0] as bigint,
+           // @ts-ignore
           activePoolsCount: Number(stakerInfo[1]),
+           // @ts-ignore
           totalRewards: stakerInfo[2] as bigint,
+           // @ts-ignore
           lastStakeTimestamp: Number(stakerInfo[3]),
         }
       : undefined,

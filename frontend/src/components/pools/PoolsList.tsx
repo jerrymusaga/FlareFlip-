@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useState, useEffect, useCallback } from "react";
-import { Coins, Flame, Plus, Users, Zap } from "lucide-react";
+import { Coins, Flame, Plus, Zap } from "lucide-react";
 import { useAccount } from "wagmi";
 import { Pool, StakerInfo } from "../../types/generated";
 import PoolCard from "./PoolCard";
@@ -29,7 +29,7 @@ export default function PoolsList({
 }: PoolsListProps) {
   const queryClient = useQueryClient();
   const { address } = useAccount();
-  const { joinPool, isPending: isJoiningPool } = useJoinPool();
+  const { joinPool} = useJoinPool();
 
   const [pools, setPools] = useState<Pool[]>(initialPools);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -179,11 +179,6 @@ export default function PoolsList({
     }
   };
 
-  // Handle play pool
-  const handlePlayPool = async (poolId: string) => {
-    // This will be handled by the PoolCard component's navigation
-    return Promise.resolve();
-  };
 
   // Filter, sort and search pools
   const filteredPools = pools
@@ -346,7 +341,6 @@ export default function PoolsList({
             pool={pool}
             address={address}
             onJoinPool={handleJoinPool}
-            onPlayPool={handlePlayPool}
             isRecentlyJoined={recentlyJoinedPools.has(pool.id)}
           />
         ))}

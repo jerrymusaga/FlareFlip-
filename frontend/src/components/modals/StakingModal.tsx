@@ -2,7 +2,6 @@ import {
     Unlock,
     Lock,
     AlertTriangle,
-    Coins,
   } from "lucide-react";
   import { StakingModalProps } from "../../types/generated";
   

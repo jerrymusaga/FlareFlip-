@@ -17,10 +17,10 @@ export default function GameContainer() {
     gameInfo,
     currentRound,
     selectedOption,
-    timeLeft,
+   
     roundResults,
     gameStatus,
-    players,
+  
     survivingPlayers,
     isPulsing,
     coinRotation,
@@ -30,10 +30,10 @@ export default function GameContainer() {
     isLoading,
   } = gameState;
 
-  const isTie =
-    currentRoundWinners.length > 0 &&
-    currentRoundLosers.length > 0 &&
-    currentRoundWinners.length === currentRoundLosers.length;
+  // const isTie =
+  //   currentRoundWinners.length > 0 &&
+  //   currentRoundLosers.length > 0 &&
+  //   currentRoundWinners.length === currentRoundLosers.length;
 
   // useEffect(() => {
   //   console.log("poolData:", gameInfo);
@@ -45,11 +45,6 @@ export default function GameContainer() {
       {/* Game Header */}
       <GameHeader
         gameInfo={gameInfo}
-        currentRound={currentRound}
-        timeLeft={timeLeft}
-        playerCount={players.length}
-        survivingCount={survivingPlayers}
-        isTie={isTie}
       />
 
       {/* Main Game Area */}
