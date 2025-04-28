@@ -55,7 +55,7 @@ You can interact with the smart contract here: https://coston2-explorer.flare.ne
 
 [Link to contract on Coston2 explorer](https://coston2-explorer.flare.network/address/0x8eF8E3391B04BcB03ae0b504Ad0B933b3b63A065)
 
-[Live Demo Link](https://flareflip-3sql3pyhm-jerrymusagas-projects.vercel.app)
+[Live Demo Link](https://flareflip-ououm4qq9-jerrymusagas-projects.vercel.app/)
 
 ## Technical Implementation
 
