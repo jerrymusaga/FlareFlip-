@@ -18,6 +18,7 @@ export function usePools() {
   const poolIndexes = Array.from({ length: poolsCount }, (_, i) => i);
 
   const { data: poolsData } = useReadContracts({
+    // @ts-ignore
     contracts: poolIndexes.map((index) => ({
       address: CONTRACT_ADDRESS as `0x${string}`,
       abi: flareFlipABI.abi,
@@ -31,6 +32,7 @@ export function usePools() {
     ? poolsData
         .map((result, index) => {
           if (result.status === "success" && result.result) {
+            //@ts-ignore
             return mapContractPoolToFrontendPool(result.result, index, result);
           }
           return null;
@@ -44,7 +46,6 @@ export function usePools() {
 function mapContractPoolToFrontendPool(
   contractPool: any,
   id: number,
-  result: any
 ): Pool {
   return {
     id: id.toString(),
@@ -80,7 +81,3 @@ function getStatusFromEnum(status: number): "open" | "active" | "completed" {
   }
 }
 
-function calculatePotentialReward(pool: any): number {
-  // Your calculation logic here
-  return Number(pool.entryFee) * Number(pool.maxParticipants);
-}

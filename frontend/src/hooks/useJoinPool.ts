@@ -1,6 +1,5 @@
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import flareFlipABI from "./ABI/FlareFlip.json";
-import { formatFigures } from "../utils/conversion";
 import { CONTRACT_ADDRESS } from "./ABI/address";
 import { parseEther } from "viem";
 

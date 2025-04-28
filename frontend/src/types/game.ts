@@ -1,13 +1,5 @@
 
 
-export interface GameInfo {
-  poolName: string;
-  entryFee: string;
-  prizePool: string;
-  maxPlayers: number;
-  poolId: string;
-}
-
 export interface RoundResult {
   round: number;
   winners: string[];
@@ -33,13 +25,14 @@ export interface RoundResult {
 export interface GameInfo {
   poolId: string;
   assetSymbol: string;
-  entryFee: number;
+  entryFee: string;
   maxParticipants: number;
   currentParticipants: number;
-  prizePool: number;
+  prizePool: string;
   status: string;
   creator: string;
   currentRound: number;
+  
 }
 
 export interface Player {

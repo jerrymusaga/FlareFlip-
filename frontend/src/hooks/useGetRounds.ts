@@ -10,7 +10,9 @@ export function useRoundResults(poolId: bigint, round: number) {
     });
     console.log(data)
     return {
+      //@ts-ignore
       winners: data?.winners || [],
+      //@ts-ignore
       losers: data?.losers || [],
       isLoading,
       error

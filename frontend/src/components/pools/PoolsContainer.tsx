@@ -9,7 +9,7 @@ import { usePoolEvents } from "../../hooks/usePoolEvents";
 
 export default function PoolsContainer() {
   const { address } = useAccount();
-  const { joinPool, isPending: isJoiningPool } = useJoinPool();
+  const { joinPool } = useJoinPool();
   const { pool } = usePools(); // Hook to get pools data
 
   const [pools, setPools] = useState<Pool[]>([]);

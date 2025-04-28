@@ -14,7 +14,6 @@ const Header = () => {
             <ConnectButton.Custom>
               {({
                 account,
-                chain,
                 openAccountModal,
                 openConnectModal,
                 mounted,
